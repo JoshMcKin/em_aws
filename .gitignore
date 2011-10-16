@@ -1,0 +1,6 @@
+Gemfile.lock
+pkg/*
+*.gem
+.bundle
+.DS_Store
+nbproject/
