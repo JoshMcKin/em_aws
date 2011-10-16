@@ -1,5 +1,8 @@
 # em_aws
-An EM-Synchrony handler for Ruby [AWS-SDK]
+An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/JoshMcKin/aws-sdk-for-ruby)
+
+This code has be submitted to AWS-SKD see: [pull request](https://github.com/amazonwebservices/aws-sdk-for-ruby/pull/14). 
+Until approval (or if it is declined) I created this gem.
 
 ## Installation
 
