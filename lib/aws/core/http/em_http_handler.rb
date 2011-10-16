@@ -38,7 +38,7 @@ module AWS
         # +:ssl_ca_file+ option to {AWS.config} or
         # {AWS::Configuration} instead.
         def initialize options = {}
-          puts "Using EM-Synchrony for AWS requests"
+          #puts "Using EM-Synchrony for AWS requests"
           @default_request_options = options
         end
         

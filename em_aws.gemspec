@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.summary     = %q{Adds EM-Synchrony support to AWS-SDK gem}
   s.description = %q{Adds EM-Synchrony support to AWS-SDK gem}
 
-  s.rubyforge_project = "em_aws"
+  s.rubyforge_project = "em_aws", '1.2.1'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
     
   # specify any dependencies here; for example:
-  s.add_development_dependency "rspec"
+  s.add_development_dependency "rspec" , '2.6.0'
   s.add_runtime_dependency "aws-sdk"
   s.add_runtime_dependency "em-synchrony"
   s.add_runtime_dependency "em-http-request"
