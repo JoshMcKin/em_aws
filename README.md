@@ -8,11 +8,12 @@ em_aws is available through [Rubygems](http://rubygems.org/gems/simple_model) an
     $ gem install em_aws
 
 ## Rails 3 setup (no rails 2 sorry)
-Setup AWS-SKD as you would normally. [AWS-SKD](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc)
+Setup [AWS-SKD](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc) as you would normally.
 
 Assuming you've already setup async-rails...
 
 In your environments files add:
+
     require 'aws-sdk'
     require 'aws/core/http/em_http_handler'
     AWS.config(
@@ -23,8 +24,11 @@ Your done.
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP request and fiber management.
 
 ### References
+
   [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby)
+
   [Async-Rails](https://github.com/igrigorik/async-rails)
+
   [Phat](http://www.mikeperham.com/2010/04/03/introducing-phat-an-asynchronous-rails-app/)
 
 ## Contributing to em_aws
