@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "em_aws/version"
-require 'syck'
 YAML::ENGINE.yamler= 'syck' # fix some Heroku Syck weirdness
 Gem::Specification.new do |s|
   s.name        = "em_aws"
