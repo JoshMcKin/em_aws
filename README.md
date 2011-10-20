@@ -6,14 +6,20 @@ Until approval (or if it is declined) I created this gem.
 
 ## Installation
 
-em_aws is available through [Rubygems](http://rubygems.org/gems/simple_model) and can be installed via:
+em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can be installed via:
 
     $ gem install em_aws
 
 ## Rails 3 setup (no rails 2 sorry)
 Setup [AWS-SKD](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc) as you would normally.
 
-Assuming you've already setup async-rails...
+Assuming you've already setup async-rails, add em_aws to you gemfile:
+    
+    gem 'em_aws'
+
+Then run:
+    
+    bundle install
 
 In your environments files add:
 
@@ -26,7 +32,21 @@ Your done.
 
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP request and fiber management.
 
-### References
+## Heroku Gotcha
+When deploying to Heroku, if you get "NameError: uninitialized constant Syck::Syck", you need to vendorize em_aws
+    
+From your apps root directory run:
+
+    gem unpack em_aws --target vendor/gems
+
+Update you gemfile:
+
+    gem 'em_aws', :path => "vendor/gems/em_aws-0.0.3"
+
+Finally, run bundler and make sure you check-in your new Gemfile.lock. 
+I'm pretty sure the Syck error is do to an outdated version of rubygems and bundler on Heroku, but as of yet have not been able to reproduce it locally.
+
+## References
 
   [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby)
 
@@ -45,4 +65,4 @@ All requests to AWS will use EM-Synchrony's implementation of em-http-request fo
 * Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
 
 ## Thanks
-Code based on HTTParty Hander in [AWS-SKD](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc)
+Code based on HTTParty Hander in [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc)
