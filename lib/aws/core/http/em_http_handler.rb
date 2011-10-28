@@ -92,9 +92,7 @@ module AWS
           new_response = nil
           if EM::reactor_running?
               #puts "Reactor is running"
-            http = EM::HttpRequest.new(url).send(method, opts)
-            http.callback { new_response =  http}
-            http.errback { puts "#{method} to AWS failed." }
+            new_response = EM::HttpRequest.new(url).send(method, opts)
           else
             EM.synchrony do
               #puts "WARNING: Had to start EM"
