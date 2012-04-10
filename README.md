@@ -26,11 +26,19 @@ In your environments files add:
     require 'aws-sdk'
     require 'aws/core/http/em_http_handler'
     AWS.config(
-      :http_handler => AWS::Http::EMHttpHandler.new)
+      :http_handler => AWS::Http::EMHttpHandler.new(
+      :pool_size => 5,
+      :proxy => {:host => "http://myproxy.com", :port => 80}
+       ))
 
 Your done. 
 
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP request and fiber management.
+
+## Connection Pools
+v0.1+ implement connections EventMachine::Synchrony::ConnectionPool. The default pool_size is 5 but it can be
+increased by in the AWS.config options. Connection pools were problematic for S3 calls that required the :path option for
+em-http-request and would return AWS::S3::SignatureDoesNotMatch errors; so for now S3 calls with paths do not make use of the connection pools.
 
 ## Heroku Gotcha
 When deploying to Heroku, if you get "NameError: uninitialized constant Syck::Syck", you need to vendorize em_aws
