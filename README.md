@@ -40,20 +40,6 @@ v0.1+ implement connections EventMachine::Synchrony::ConnectionPool. The default
 increased by in the AWS.config options. Connection pools were problematic for S3 calls that required the :path option for
 em-http-request and would return AWS::S3::SignatureDoesNotMatch errors; so for now S3 calls with paths do not make use of the connection pools.
 
-## Heroku Gotcha
-When deploying to Heroku, if you get "NameError: uninitialized constant Syck::Syck", you need to vendorize em_aws
-    
-From your apps root directory run:
-
-    gem unpack em_aws --target vendor/gems
-
-Update you gemfile:
-
-    gem 'em_aws', :path => "vendor/gems/em_aws-0.0.3"
-
-Finally, run bundler and make sure you check-in your new Gemfile.lock. 
-I'm pretty sure the Syck error is do to an outdated version of rubygems and bundler on Heroku, but as of yet have not been able to reproduce it locally.
-
 ## References
 
   [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby)
