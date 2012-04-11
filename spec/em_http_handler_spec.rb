@@ -16,7 +16,7 @@ require 'spec_helper'
 module AWS::Core
   module Http
     describe EMHttpHandler do
-
+    
       let(:handler) { EMHttpHandler.new(default_request_options) }
 
       let(:default_request_options) { {} }
@@ -32,7 +32,6 @@ module AWS::Core
       let(:em_http_options) do
         options = nil
         EMHttpHandler.should_receive(:fetch_response).with do |url, method,opts|
-          puts "here"
           options = opts
           double("http response",
             :response => "<foo/>",
@@ -52,7 +51,12 @@ module AWS::Core
 
         it 'should set the default request options' do
           described_class.new(:foo => "BAR").default_request_options.
-            should == { :foo => "BAR" }
+            should == { :foo => "BAR", :pool_size => 5 }
+        end
+        
+        it 'should not override supplied pool_size' do
+          described_class.new(:pool_size => 20).default_request_options.
+            should == { :pool_size => 20 }
         end
 
       end
@@ -101,61 +105,59 @@ module AWS::Core
           
         end
         
-        
-        describe '#fetch_proxy' do
-          context ':proxy_uri' do
-
-            it 'passes proxy address and port from the request' do
-              req.proxy_uri = URI.parse('https://user:pass@proxy.com:443/path?query')
-              handler.fetch_proxy(req)[:proxy][:host].should == 'proxy.com'
-              handler.fetch_proxy(req)[:proxy][:port].should == 443
-            end
-
+      end
+      describe '#fetch_proxy' do
+        context ':proxy_uri' do
+          it 'passes proxy address and port from the request' do
+            req.proxy_uri = URI.parse('https://user:pass@proxy.com:443/path?query')
+            handler.fetch_proxy(req)[:proxy][:host].should == 'proxy.com'
+            handler.fetch_proxy(req)[:proxy][:port].should == 443
           end
+
+        end
         
-          describe '#fetch_ssl' do
-            it 'prefers the request option when set' do
-              req.use_ssl = true
-              req.ssl_verify_peer = true
-              req.ssl_ca_file = "something"
-              handler.fetch_ssl(req)[:private_key_file].should == "something"
-              handler.fetch_ssl(req)[:cert_chain_file].should == "something"
-            end
+        describe '#fetch_ssl' do
+          it 'prefers the request option when set' do
+            req.use_ssl = true
+            req.ssl_verify_peer = true
+            req.ssl_ca_file = "something"
+            handler.fetch_ssl(req)[:private_key_file].should == "something"
+            handler.fetch_ssl(req)[:cert_chain_file].should == "something"
+          end
            
-            context 'CA cert path' do
+          context 'CA cert path' do
 
-              context 'use_ssl? is true' do
+            context 'use_ssl? is true' do
 
-                before(:each) { req.use_ssl = true }
+              before(:each) { req.use_ssl = true }
 
-                context 'ssl_verify_peer? is true' do
+              context 'ssl_verify_peer? is true' do
 
-                  before(:each) do
-                    req.ssl_verify_peer = true
-                    req.ssl_ca_file = "foobar.txt"
-                  end
-
-                  it 'should use the ssl_ca_file attribute of the request' do
-                    handler.fetch_ssl(req)[:private_key_file].should == "foobar.txt"
-                  end
-                  
-                  it 'should use the ssl_ca_file attribute of the request' do
-                    handler.fetch_ssl(req)[:cert_chain_file].should == "foobar.txt"
-                  end
+                before(:each) do
+                  req.ssl_verify_peer = true
+                  req.ssl_ca_file = "foobar.txt"
                 end
 
-                it 'should not set the ssl_ca_file option without ssl_verify_peer?' do
-                  handler.fetch_ssl(req).should_not include(:private_key_file)
+                it 'should use the ssl_ca_file attribute of the request' do
+                  handler.fetch_ssl(req)[:private_key_file].should == "foobar.txt"
+                end
+                  
+                it 'should use the ssl_ca_file attribute of the request' do
+                  handler.fetch_ssl(req)[:cert_chain_file].should == "foobar.txt"
                 end
               end
 
-              it 'should not set the ssl_ca_file option without use_ssl?' do
+              it 'should not set the ssl_ca_file option without ssl_verify_peer?' do
                 handler.fetch_ssl(req).should_not include(:private_key_file)
               end
             end
-          end      
-        end
-      end
+
+            it 'should not set the ssl_ca_file option without use_ssl?' do
+              handler.fetch_ssl(req).should_not include(:private_key_file)
+            end
+          end
+        end      
+      end    
     end
   end
 end
