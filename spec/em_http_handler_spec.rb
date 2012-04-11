@@ -48,17 +48,10 @@ module AWS::Core
       end
 
       describe '#initialize' do
-
         it 'should set the default request options' do
           described_class.new(:foo => "BAR").default_request_options.
-            should == { :foo => "BAR", :pool_size => 5 }
+            should == { :foo => "BAR" }
         end
-        
-        it 'should not override supplied pool_size' do
-          described_class.new(:pool_size => 20).default_request_options.
-            should == { :pool_size => 20 }
-        end
-
       end
 
       describe '#handle' do
