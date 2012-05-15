@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    em_aws (0.1.1)
+    em_aws (0.1.2)
       aws-sdk
       em-http-request
       em-synchrony
@@ -9,8 +9,8 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
-    addressable (2.2.7)
-    aws-sdk (1.3.9)
+    addressable (2.2.8)
+    aws-sdk (1.5.1)
       httparty (~> 0.7)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
@@ -25,25 +25,25 @@ GEM
       http_parser.rb (>= 0.5.3)
     em-socksify (0.2.0)
       eventmachine (>= 1.0.0.beta.4)
-    em-synchrony (1.0.0)
+    em-synchrony (1.0.1)
       eventmachine (>= 1.0.0.beta.1)
     eventmachine (1.0.0.beta.4)
     http_parser.rb (0.5.3)
-    httparty (0.8.1)
-      multi_json
+    httparty (0.8.3)
+      multi_json (~> 1.0)
       multi_xml
-    json (1.6.6)
-    multi_json (1.2.0)
-    multi_xml (0.4.2)
+    json (1.7.3)
+    multi_json (1.3.5)
+    multi_xml (0.5.1)
     nokogiri (1.5.2)
-    rspec (2.9.0)
-      rspec-core (~> 2.9.0)
-      rspec-expectations (~> 2.9.0)
-      rspec-mocks (~> 2.9.0)
-    rspec-core (2.9.0)
-    rspec-expectations (2.9.1)
+    rspec (2.10.0)
+      rspec-core (~> 2.10.0)
+      rspec-expectations (~> 2.10.0)
+      rspec-mocks (~> 2.10.0)
+    rspec-core (2.10.0)
+    rspec-expectations (2.10.0)
       diff-lcs (~> 1.1.3)
-    rspec-mocks (2.9.0)
+    rspec-mocks (2.10.1)
     uuidtools (2.1.2)
 
 PLATFORMS
