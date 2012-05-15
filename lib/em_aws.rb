@@ -5,6 +5,7 @@ require 'em-synchrony'
 require 'em-synchrony/em-http'
 require 'aws/core/autoloader'
 
+AWS.eager_autoload! # lazy load isn't thread safe
 module AWS
   module Core
     module Http
