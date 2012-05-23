@@ -32,7 +32,7 @@ module AWS
         def fetch_connection(url,pool_size)  
           _fibered_mutex.synchronize do
             @@pools[url] ||= EventMachine::Synchrony::ConnectionPool.new(size: pool_size) do
-              EM::HttpRequest.new(url)
+              EM::HttpRequest.new(url, :inactivity_timeout => 20)
             end                   
             return @@pools[url]
           end 
