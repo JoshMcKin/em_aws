@@ -2,8 +2,7 @@
 require "em-synchrony"
 require "em-synchrony/em-http"
 require 'em-synchrony/thread'
-module AWS
-  
+module AWS 
   module Core
     module Http
       
@@ -30,7 +29,7 @@ module AWS
         @@pools = {}
       
         # Thread/Fiber safe connection pool
-        def self.fetch_connection(url,pool_size)  
+        def fetch_connection(url,pool_size)  
           _fibered_mutex.synchronize do
             @@pools[url] ||= EventMachine::Synchrony::ConnectionPool.new(size: pool_size) do
               EM::HttpRequest.new(url)
@@ -105,8 +104,8 @@ module AWS
         # We get AWS::S3::SignatureDoesNotMatch when path is used to fetch an s3 object
         # so for now we won't use the pool for requests where the path is more than just '/'
         def fetch_response(url,method,opts={})
-          return EM::HttpRequest.new("#{url}#{opts[:path]}").send(method, opts) if (@default_request_options[:pool_size] == 0 || opts[:path].to_s.length > 1)
-          connection = self.class.fetch_connection(url,@default_request_options[:pool_size])         
+          return EM::HttpRequest.new("#{url}").send(method, opts) if (@default_request_options[:pool_size] == 0 || opts[:path].to_s.length > 1)
+          connection = fetch_connection(url,@default_request_options[:pool_size])         
           connection.send(method, {:keepalive => true}.merge(opts))
         end
 
