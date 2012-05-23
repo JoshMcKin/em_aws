@@ -88,8 +88,6 @@ module AWS
             merge(fetch_ssl(request))
         end
         
-        # We get AWS::S3::SignatureDoesNotMatch when path is used to fetch an s3 object
-        # so for now we won't use the pool for requests where the path is more than just '/'
         def fetch_response(url,method,opts={})
           return EM::HttpRequest.new("#{url}").send(method, opts)     
         end
@@ -110,8 +108,8 @@ module AWS
           # get, post, put, delete, head
           method = request.http_method.downcase.to_sym
           
-          opts = default_request_options.
-            merge(request_options(request))
+          opts = default_request_options.merge(request_options(request))
+          
           if (method == :get)
             opts[:query] = request.body
           else
