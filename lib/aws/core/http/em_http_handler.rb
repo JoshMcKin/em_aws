@@ -2,6 +2,7 @@
 require "em-synchrony"
 require "em-synchrony/em-http"
 require 'em-synchrony/thread'
+
 module AWS 
   module Core
     module Http
@@ -16,28 +17,23 @@ module AWS
       # require 'aws-sdk'
       # require 'aws/core/http/em_http_handler'
       # AWS.config(
-      # :http_handler => AWS::Http::EMHttpHandler.new(
-      # :pool_size => 20,
-      # :proxy => {:host => "http://myproxy.com",:port => 80}
+      #   :http_handler => AWS::Http::EMHttpHandler.new(
+      #     :pool_size => 20,
+      #     :inactivity_timeout => 30, # number of seconds to timeout stale connections in the pool
+      #     :proxy => {:host => "http://myproxy.com",:port => 80})
       # )
-      # )
-      #
+      # EMHttpHandler options
+      # * :pool_size => number of connections in your connection pool, defaults to 0, which disables to pool entirely
+      # * :inactivity_timeout => number of seconds after which to close stale pool connections default is 0, 
+      # which means connections will not go stale useless forced by the client
+      # * :connect_timeout => Timeout for establishing connections default is 10
+      # * See https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests for request options (client options are not set)
       class EMHttpHandler
         # @return [Hash] The default options to send to EM-Synchrony on each
         # request.
         attr_reader :default_request_options
         @@pools = {}
-      
-        # Thread/Fiber safe connection pool
-        def fetch_connection(url,pool_size)  
-          _fibered_mutex.synchronize do
-            @@pools[url] ||= EventMachine::Synchrony::ConnectionPool.new(size: pool_size) do
-              EM::HttpRequest.new(url, :inactivity_timeout => 20)
-            end                   
-            return @@pools[url]
-          end 
-        end
-             
+          
         # Constructs a new HTTP handler using EM-Synchrony.
         #
         # @param [Hash] options Default options to send to EM-Synchrony on
@@ -47,13 +43,59 @@ module AWS
         # ignored. If you need to set the CA file, you should use the
         # +:ssl_ca_file+ option to {AWS.config} or
         # {AWS::Configuration} instead.
-        # Defaults pool_size to 5
+        # Defaults pool_size to 0
         def initialize options = {}
-          #puts "Using EM-Synchrony for AWS requests"
-          # default to not use pool
-          options[:pool_size] ||= 0
           @default_request_options = options
+          @pool_size = (options[:pool_size] || 0)
+          @inactivity_timeout = (options[:inactivity_timeout] || 0)
+          @connection_timeout = (options[:connection_timeout] || 10)
+        end      
+        
+        # Add thread safety.
+        def _fibered_mutex
+          @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
         end
+        
+        def available_pools(url)
+          @@pools[url] ||= build_pool(url)
+        end
+        
+        def build_pool(url)
+          new_pool = []
+          @pool_size.times { new_pool << EM::HttpRequest.new(url, 
+              :inactivity_timeout => @inactivity_timeout,
+              :connection_timeout => @connection_timeout
+            )}
+          new_pool
+        end
+        
+        # Thread/Fiber safe connection pool
+        def fetch_connection(url,timeout=0.5) 
+          alarm = (Time.now + timeout)
+          connection = nil
+          _fibered_mutex.synchronize do
+            connection = available_pools(url).shift
+            # block until we get an available connection or Timeout::Error
+            while connection.nil?
+              raise Timeout::Error, "Could not fetch an available connection in time" if alarm <= Time.now
+              connection = available_pools(url).shift
+            end
+          end
+          santize_connection(connection)
+        end
+        
+        def santize_connection(connection)
+          if connection.conn && connection.conn.error?
+            puts "Reconnecting to AWS: #{EventMachine::report_connection_error_status(connection.conn.instance_variable_get(:@signature))}"
+            connection.conn.close_connection
+            connection.instance_variable_set(:@deferred, true)
+          end
+          connection
+        end
+        
+        def return_connection(url,connection)
+          @@pools[url] << connection
+        end       
         
         def fetch_url(request)
           url = nil
@@ -64,17 +106,15 @@ module AWS
           end
           url
         end
-                   
+           
         def fetch_headers(request)
           # Net::HTTP adds this header for us when the body is
           # provided, but it messes up signing
           headers = { 'content-type' => '' }
-  
           # headers must have string values (net http calls .strip on them)
           request.headers.each_pair do |key,value|
             headers[key] = value.to_s
           end
-  
           {:head => headers}
         end
         
@@ -104,15 +144,12 @@ module AWS
         # We get AWS::S3::SignatureDoesNotMatch when path is used to fetch an s3 object
         # so for now we won't use the pool for requests where the path is more than just '/'
         def fetch_response(url,method,opts={})
-          return EM::HttpRequest.new("#{url}").send(method, opts) if (@default_request_options[:pool_size] == 0 || opts[:path].to_s.length > 1)
-          connection = fetch_connection(url,@default_request_options[:pool_size])         
-          connection.send(method, {:keepalive => true}.merge(opts))
-        end
-
-        # Add thread safety.
-        def _fibered_mutex
-          @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
-        end
+          return EM::HttpRequest.new(url).send(method, opts) if (@default_request_options[:pool_size] == 0) #|| opts[:path].to_s.length > 1)
+          connection = fetch_connection(url)      
+          response = connection.send(method, {:keepalive => true}.merge(opts))
+          return_connection(url,connection)   
+          response
+        end     
         
         def handle(request,response)
           if EM::reactor_running?
@@ -131,6 +168,7 @@ module AWS
           method = request.http_method.downcase.to_sym
           
           opts = default_request_options.merge(request_options(request))
+          opts[:path] = request.uri
           
           if (method == :get)
             opts[:query] = request.body
@@ -139,7 +177,6 @@ module AWS
           end
           
           url = fetch_url(request)
-          
           begin        
             http_response = fetch_response(url,method,opts)         
           rescue Timeout::Error, Errno::ETIMEDOUT => e

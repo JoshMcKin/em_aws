@@ -28,11 +28,53 @@ In your environments files add:
     AWS.config(
       :http_handler => AWS::Http::EMHttpHandler.new(
       :proxy => {:host => "http://myproxy.com", :port => 80}
-       ))
+       ));
 
 Your done. 
 
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP request and fiber management.
+
+## Connection Pooling (keep-alive)
+To enable connection pooling set the :pool_size to anything greater than 0. By default inactivity_timeout is set
+to 0 which will leave the connection open for as long as the client allows.
+    
+    require 'aws-sdk'
+    require 'aws/core/http/em_http_handler'
+    AWS.config(
+      :http_handler => AWS::Http::EMHttpHandler.new(
+      :proxy => {:pool_size => 10
+        :inactivity_timeout => 30}
+       ));
+
+VERY VERY subjective benchmarks...but its still a pretty nice result.
+
+    EM.synchrony do 
+      Benchmark.bm do |b|
+        b.report("default") do
+          100.times { 
+            MyTestSimpleDB.where('id = ?',Random.new.rand(100000000...999999999)).first
+          }
+        end
+        b.report("default") do
+          100.times { 
+            MyTestSimpleDB.where('id = ?',Random.new.rand(100000000...999999999)).first
+          }
+        end
+      end
+      EM.stop
+    end
+
+
+    # :pool_size => 0 (the default value)
+                user     system      total        real
+    default  0.980000   0.170000   1.150000 ( 24.760014)
+    default  0.980000   0.160000   1.140000 ( 27.072073)
+
+
+    # :pool_size => 5
+                user     system      total        real
+    pool     0.690000   0.050000   0.740000 (  9.745807)
+    pool     0.620000   0.040000   0.660000 (  7.658251)
 
 ## References
 
