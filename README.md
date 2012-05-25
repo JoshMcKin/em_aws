@@ -51,15 +51,12 @@ VERY VERY subjective benchmarks...but its still a pretty nice result.
 
     EM.synchrony do 
       Benchmark.bm do |b|
-        b.report("default") do
-          100.times { 
-            MyTestSimpleDB.where('id = ?',Random.new.rand(100000000...999999999)).first
-          }
-        end
-        b.report("default") do
-          100.times { 
-            MyTestSimpleDB.where('id = ?',Random.new.rand(100000000...999999999)).first
-          }
+        2.times do 
+          b.report("default") do
+            100.times { 
+              MyTestSimpleDB.where('id = ?',Random.new.rand(100000000...999999999)).first
+            }
+          end
         end
       end
       EM.stop

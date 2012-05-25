@@ -48,7 +48,6 @@ module AWS
           @default_request_options = options
           @pool_size = (options[:pool_size] || 0)
           @inactivity_timeout = (options[:inactivity_timeout] || 0)
-          @connection_timeout = (options[:connection_timeout] || 10)
         end      
         
         # Add thread safety.
@@ -63,8 +62,7 @@ module AWS
         def build_pool(url)
           new_pool = []
           @pool_size.times { new_pool << EM::HttpRequest.new(url, 
-              :inactivity_timeout => @inactivity_timeout,
-              :connection_timeout => @connection_timeout
+              :inactivity_timeout => @inactivity_timeout
             )}
           new_pool
         end
