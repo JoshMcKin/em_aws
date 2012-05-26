@@ -50,7 +50,7 @@ module AWS::Core
       describe '#initialize' do
         it 'should set the default request options' do
           described_class.new(:foo => "BAR").default_request_options.
-            should == { :foo => "BAR" }
+            should == { :foo => "BAR", :pool_size => 0}
         end
       end
 

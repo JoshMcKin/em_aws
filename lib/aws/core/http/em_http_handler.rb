@@ -1,12 +1,9 @@
 # http://docs.amazonwebservices.com/AWSRubySDK/latest/
 require "em-synchrony"
 require "em-synchrony/em-http"
-require 'em-synchrony/thread'
-
 module AWS 
   module Core
     module Http
-      
       # An EM-Synchrony implementation for Fiber based asynchronous ruby application.
       # See https://github.com/igrigorik/async-rails and 
       # http://www.mikeperham.com/2010/04/03/introducing-phat-an-asynchronous-rails-app/
@@ -20,6 +17,7 @@ module AWS
       #   :http_handler => AWS::Http::EMHttpHandler.new(
       #     :pool_size => 20,
       #     :inactivity_timeout => 30, # number of seconds to timeout stale connections in the pool
+      #     :pool_timeout => 1, the maximum number of seconds to block while waiting for a connection, before a Time::Error is raised.
       #     :proxy => {:host => "http://myproxy.com",:port => 80})
       # )
       # EMHttpHandler options
@@ -45,56 +43,11 @@ module AWS
         # {AWS::Configuration} instead.
         # Defaults pool_size to 0
         def initialize options = {}
+          options[:pool_size] ||= 0
           @default_request_options = options
-          @pool_size = (options[:pool_size] || 0)
-          @inactivity_timeout = (options[:inactivity_timeout] || 0)
+          @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
         end      
-        
-        # Add thread safety.
-        def _fibered_mutex
-          @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
-        end
-        
-        def available_pools(url)
-          @@pools[url] ||= build_pool(url)
-        end
-        
-        def build_pool(url)
-          new_pool = []
-          @pool_size.times { new_pool << EM::HttpRequest.new(url, 
-              :inactivity_timeout => @inactivity_timeout
-            )}
-          new_pool
-        end
-        
-        # Thread/Fiber safe connection pool
-        def fetch_connection(url,timeout=0.5) 
-          alarm = (Time.now + timeout)
-          connection = nil
-          _fibered_mutex.synchronize do
-            connection = available_pools(url).shift
-            # block until we get an available connection or Timeout::Error
-            while connection.nil?
-              raise Timeout::Error, "Could not fetch an available connection in time" if alarm <= Time.now
-              connection = available_pools(url).shift
-            end
-          end
-          santize_connection(connection)
-        end
-        
-        def santize_connection(connection)
-          if connection.conn && connection.conn.error?
-            puts "Reconnecting to AWS: #{EventMachine::report_connection_error_status(connection.conn.instance_variable_get(:@signature))}"
-            connection.conn.close_connection
-            connection.instance_variable_set(:@deferred, true)
-          end
-          connection
-        end
-        
-        def return_connection(url,connection)
-          @@pools[url] << connection
-        end       
-        
+
         def fetch_url(request)
           url = nil
           if request.use_ssl?
@@ -139,14 +92,12 @@ module AWS
             merge(fetch_ssl(request))
         end
         
-        # We get AWS::S3::SignatureDoesNotMatch when path is used to fetch an s3 object
-        # so for now we won't use the pool for requests where the path is more than just '/'
         def fetch_response(url,method,opts={})
-          return EM::HttpRequest.new(url).send(method, opts) if (@default_request_options[:pool_size] == 0) #|| opts[:path].to_s.length > 1)
-          connection = fetch_connection(url)      
-          response = connection.send(method, {:keepalive => true}.merge(opts))
-          return_connection(url,connection)   
-          response
+          return EM::HttpRequest.new(url).send(method, opts) unless @pool
+          
+          @pool.run(url) do |connection|
+            connection.send(method, {:keepalive => true}.merge(opts))
+          end  
         end     
         
         def handle(request,response)
