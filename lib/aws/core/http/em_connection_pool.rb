@@ -59,7 +59,7 @@ module AWS
             connection = available_pools(url).shift
             # block until we get an available connection or Timeout::Error
             while connection.nil?
-              raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing you connection pool for em_aws." if alarm <= Time.now
+              raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
               connection = available_pools(url).shift
             end
           end
