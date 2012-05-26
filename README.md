@@ -62,14 +62,13 @@ VERY VERY subjective benchmarks...but its still a pretty nice result.
       EM.stop
     end
 
-
     # :pool_size => 0 (the default value)
                 user     system      total        real
     default  0.980000   0.170000   1.150000 ( 24.760014)
     default  0.980000   0.160000   1.140000 ( 27.072073)
 
-
-    # :pool_size => 5
+    # :pool_size => 1 (only using 1 because this is a single thread, so 1 
+    # request at 1 time, but we get to see the improvement from the keep alive)
                 user     system      total        real
     pool     0.690000   0.050000   0.740000 (  9.745807)
     pool     0.620000   0.040000   0.660000 (  7.658251)
