@@ -27,6 +27,7 @@ module AWS
         
         def available_pools(url)
           @@pools[url] ||= build_pool(url)
+          @@pools[url]
         end
         
         def build_pool(url)
@@ -50,7 +51,6 @@ module AWS
         def fetch_connection(url) 
           alarm = (Time.now + @pool_timeout)
           connection = nil
-          connection = available_pools(url).shift
           # block until we get an available connection or Timeout::Error
           while connection.nil?
             raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
