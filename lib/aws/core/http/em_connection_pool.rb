@@ -25,11 +25,6 @@ module AWS
           @pool_timeout = (options[:pool_timeout] || 0.5) 
         end      
         
-        # Add thread safety.
-        def _fibered_mutex
-          @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
-        end
-        
         def available_pools(url)
           @@pools[url] ||= build_pool(url)
         end
@@ -55,14 +50,12 @@ module AWS
         def fetch_connection(url) 
           alarm = (Time.now + @pool_timeout)
           connection = nil
-          _fibered_mutex.synchronize do
+          connection = available_pools(url).shift
+          # block until we get an available connection or Timeout::Error
+          while connection.nil?
+            raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
             connection = available_pools(url).shift
-            # block until we get an available connection or Timeout::Error
-            while connection.nil?
-              raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
-              connection = available_pools(url).shift
-            end
-          end
+          end  
           santize_connection(connection)
         end
         
