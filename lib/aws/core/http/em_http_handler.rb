@@ -30,7 +30,6 @@ module AWS
         # @return [Hash] The default options to send to EM-Synchrony on each
         # request.
         attr_reader :default_request_options
-        @@pools = {}
           
         # Constructs a new HTTP handler using EM-Synchrony.
         #
