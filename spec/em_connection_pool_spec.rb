@@ -1,7 +1,9 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
 require 'thread'
-require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
+require "em-synchrony"
+require "em-synchrony/em-http"
+require 'spec_helper'
 module AWS 
   module Core
     module Http
@@ -30,44 +32,40 @@ module AWS
             lambda { @em_connection_pool.fetch_connection('some_url.com')}.should raise_error(Timeout::Error)
           end
         end
-        
-        context 'multi-threading' do
+        require 'httparty'
+        context 'multi-fibering' do
           # Pretty sure this is how you would do threads with fibers
+          @em_connection_pool.instance_variable_set(:@never_block, true)
           it "should be thread safe" do             
-            @threads = []
-            @request_made = []
-            50.times do |i|
-              @threads << Thread.new do
-                fibers = []
-                3.times do 
-                  fibers << Fiber.new do
-                    EM.synchrony do
-                      @em_connection_pool.stub(:new_connection).and_return(1)
-                      @em_connection_pool.stub(:santize_connection).and_return(1)
-                      @em_connection_pool.run("http://test_url.com") do |connection|
-                        @request_made << connection
-                      end
-                      EM.stop
-                    end 
+            @requests_made = []
+
+            fibers = []  
+            10.times do 
+              fibers << Fiber.new do
+                EM.synchrony do                 
+                  @r = nil
+                  @em_connection_pool.run "http://www.testbadurl123.com/" do |connection|                 
+                    @r = connection.get({:keepalive => true}).response_header.status.to_i
                   end
+                  @requests_made << @r
+                  Fiber.yield EM.stop
                 end
-                fibers.each do |t| 
-                  t.resume
-                end
+                    
+              end 
+                  
+              fibers.each do |f| 
+                f.resume if f.alive?
               end
-            end
-            sleep(1)
-            @threads.each do |t| 
-              t.join
+                  
             end
             # Make sure all our request were made
-            @request_made.length.should eql(150)
+            @requests_made.length.should eql(10)
+            
             # If we were not thread safe the number of connections would not be 5
-            @em_connection_pool.instance_variable_get(:@pools)["http://test_url.com"].length.should eql(@em_connection_pool.instance_variable_get(:@pool_size))              
+            @em_connection_pool.instance_variable_get(:@pools)["http://www.testbadurl123.com/"].length.should eql(@em_connection_pool.instance_variable_get(:@pool_size))              
           end          
         end
       end
     end
   end
 end
-

@@ -10,6 +10,7 @@ module AWS
         # pool is a hash of connection arrays, instead of a simple array like
         # most connection pools
         # Stores data concerning pools, like current size, last fetched
+        # 
         # OPTIONS
         # * :pool_size - number of connections for each pool
         # * :inactivity_timeout - number of seconds to wait before disconnecting, 
@@ -18,12 +19,16 @@ module AWS
         # because this is blocking it should be an extremely short amount of 
         # time default to 0.5 seconds, if you need more consider enlarging your pool
         # instead of raising this number
+        # * :max_pool_size - the maximum number of new connects to create if blocking,
+        # these connections are not returned to the pool, defaults to :pool_size
+        # :never_block - if set to true, a connection will always be returned, but 
+        # these extra connections are not added to the pool when the request is completed
         def initialize(options={})
           @pools = {}
           @pool_data = {}
-          @mutex = (EM::reactor_running? ? EM::Synchrony::Thread::Mutex.new : Mutex.new )
           @pool_size = (options[:pool_size] || 5)
-          @max_pool_size = (options[:pool_size] || @pool_size)
+          @max_pool_size = (options[:max_pool_size] || @pool_size)
+          @never_block = (options[:never_block] || false)
           @inactivity_timeout = (options[:inactivity_timeout] || 0)
           @pool_timeout = (options[:pool_timeout] || 0.5) 
         end
@@ -41,7 +46,7 @@ module AWS
           AWS.config.logger.info "Adding AWS connection to #{url}"
           add_connection_data(url)
           @pools[url] ||= []
-          @pools[url] << new_connection(url, :inactivity_timeout => @inactivity_timeout)         
+          @pools[url] << new_connection(url)         
           @pools[url]
         end
         
@@ -50,31 +55,32 @@ module AWS
           @pool_data[url][:current_size] += 1 
         end
         
-        def new_connection(url,options={})
-          EM::HttpRequest.new(url, options)
+        def new_connection(url)
+          EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
         end
         
         # run the block on the retrieved connection, then return the connection
         # back to the pool.
         def run(url, &block)
-          connection = fetch_connection(url)
+          connection = santize_connection(fetch_connection(url))
           block.call(connection)
         ensure
           return_connection(url,connection) 
         end
         
         # return an available connection
-        def fetch_connection(url) 
-          alarm = (Time.now + @pool_timeout)
+        def fetch_connection(url)         
           connection = nil
-          # block until we get an available connection or Timeout::Error
-          @mutex.synchronize do
-            while connection.nil?
-              raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
-              connection = available_pools(url).shift
-            end  
+          alarm = (Time.now + @pool_timeout)       
+          # block until we get an available connection or Timeout::Error     
+          while connection.nil?
+            raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
+            connection = available_pools(url).shift
+            if connection.nil? && (@never_block || (@pool_data[url] && @pool_data[url][:current_size] > @max_pool_size))
+              connection = new_connection(url)
+            end
           end
-          santize_connection(connection)
+          connection    
         end
         
         # Make sure we have a good connection. This should not be nesseccary 
@@ -89,7 +95,11 @@ module AWS
         end
         
         def return_connection(url,connection)
-          @pools[url] << connection unless @pools[url].nil?
+          if (@pools[url].nil? || @pools[url].length > @max_pool_size)
+            connection.close
+          else
+            @pools[url] << connection 
+          end
           @pools[url]
         end
       end
