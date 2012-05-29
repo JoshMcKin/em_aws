@@ -3,6 +3,7 @@
 require 'em_aws'
 require 'rspec'
 require 'bundler/setup'
+require 'logger'
 
 
 
@@ -10,7 +11,7 @@ require 'bundler/setup'
 # in ./support/ and its subdirectories.
 #Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
-
+AWS.config(:logger => Logger.new(STDERR))
 RSpec.configure do |config|
 
 
