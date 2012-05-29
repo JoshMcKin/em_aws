@@ -70,7 +70,7 @@ module AWS
         # in em-http-request master, but better safe than sorry...
         def santize_connection(connection)
           if connection.conn && connection.conn.error?
-            puts "Reconnecting to AWS: #{EventMachine::report_connection_error_status(connection.conn.instance_variable_get(:@signature))}"
+            AWS.config.logger.info "Reconnecting to AWS: #{EventMachine::report_connection_error_status(connection.conn.instance_variable_get(:@signature))}"
             connection.conn.close_connection
             connection.instance_variable_set(:@deferred, true)
           end
