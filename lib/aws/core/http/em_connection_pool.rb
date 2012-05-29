@@ -11,6 +11,9 @@ module AWS
         
         @@pools = {}
         
+        # Stores data concerning pools, like current size, last fetched
+        @@pool_data = {}
+        
         # OPTIONS
         # * :pool_size - number of connections for each pool
         # * :inactivity_timeout - number of seconds to wait before disconnecting, 
