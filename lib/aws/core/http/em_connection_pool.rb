@@ -26,16 +26,17 @@ module AWS
         end      
         
         def available_pools(url)
-          @@pools[url] ||= build_pool(url)
+          add_connection(url) if (@@pool_data[url].nil? || (@@pools[url].empty? && @@pool_data[url][:current_size] < @pool_size))
           @@pools[url]
         end
         
-        def build_pool(url)
-          new_pool = []
-          @pool_size.times do
-            new_pool << EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
-          end
-          new_pool
+        def add_connection(url)
+          puts AWS.config.logger.info "Adding AWS connection to #{url}"
+          @@pools[url] ||= []
+          @@pool_data[url] ||= {:current_size => 0}
+          @@pools[url] << EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
+          @@pool_data[url][:current_size] += 1 
+          @@pools[url]
         end
         
         # run the block on the retrieved connection, then return the connection
