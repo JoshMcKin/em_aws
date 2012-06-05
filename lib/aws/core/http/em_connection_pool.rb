@@ -33,9 +33,15 @@ module AWS
           @pool_timeout = (options[:pool_timeout] || 0.5) 
         end
         
+        def _fiber_mutex
+          @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
+        end
+        
         def available_pools(url)
-          add_connection(url) if add_connection?(url)
-          @pools[url]
+          _fiber_mutex.synchronize do
+            add_connection(url) if add_connection?(url)
+            @pools[url]
+          end
         end
         
         def add_connection?(url)
