@@ -19,15 +19,12 @@ module AWS
         # because this is blocking it should be an extremely short amount of 
         # time default to 0.5 seconds, if you need more consider enlarging your pool
         # instead of raising this number
-        # * :max_pool_size - the maximum number of new connects to create if blocking,
-        # these connections are not returned to the pool, defaults to :pool_size
         # :never_block - if set to true, a connection will always be returned, but 
         # these extra connections are not added to the pool when the request is completed
         def initialize(options={})
           @pools = {}
           @pool_data = {}
           @pool_size = (options[:pool_size] || 5)
-          @max_pool_size = (options[:max_pool_size] || @pool_size)
           @never_block = (options[:never_block] || false)
           @inactivity_timeout = (options[:inactivity_timeout] || 0)
           @pool_timeout = (options[:pool_timeout] || 0.5) 
@@ -101,7 +98,7 @@ module AWS
         end
         
         def return_connection(url,connection)
-          if (@pools[url].nil? || @pools[url].length > @max_pool_size)
+          if (@pools[url].nil? || @pools[url].length > @pool_size)
             connection.close
           else
             @pools[url] << connection 

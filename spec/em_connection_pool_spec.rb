@@ -32,11 +32,11 @@ module AWS
             lambda { @em_connection_pool.fetch_connection('some_url.com')}.should raise_error(Timeout::Error)
           end
         end
-        require 'httparty'
-        context 'multi-fibering' do
+
+        context 'fibering' do
           # Pretty sure this is how you would do threads with fibers
           @em_connection_pool.instance_variable_set(:@never_block, true)
-          it "should be thread safe" do             
+          it "should be work" do             
             @requests_made = []
 
             fibers = []  
@@ -49,8 +49,7 @@ module AWS
                   end
                   @requests_made << @r
                   Fiber.yield EM.stop
-                end
-                    
+                end         
               end 
                   
               fibers.each do |f| 
