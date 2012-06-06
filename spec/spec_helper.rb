@@ -10,8 +10,12 @@ require 'logger'
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
 #Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
-
-AWS.config(:logger => Logger.new(STDERR))
+class StubLogger
+  def method_missing(method, *args)
+    #we don't care
+  end
+end
+AWS.config(:logger => StubLogger.new)
 RSpec.configure do |config|
 
 

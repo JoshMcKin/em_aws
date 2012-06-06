@@ -42,7 +42,7 @@ module AWS
         end
         
         def add_connection?(url)
-          (@pool_data[url].nil? || (@pool_data[url].length == 0 && (@pool_data[url][:current_size] < @pool_size)))
+          (@pool_data[url].nil? || (@pools[url].length == 0 && (@pool_data[url][:current_size] < @pool_size)))
         end
         
         def add_connection(url) 
@@ -80,6 +80,7 @@ module AWS
             raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
             connection = available_pools(url).shift
             if connection.nil? && (@never_block)
+              AWS.config.logger.info "Adding AWS connection to #{url} for never_block, will not be returned to pool."
               connection = new_connection(url)
             end
           end
@@ -98,8 +99,8 @@ module AWS
         end
         
         def return_connection(url,connection)
-          if (@pools[url].nil? || @pools[url].length > @pool_size)
-            connection.close
+          if (@pools[url].nil? || (@pools[url].length == @pool_size))
+            connection.conn.close_connection if connection.conn
           else
             @pools[url] << connection 
           end

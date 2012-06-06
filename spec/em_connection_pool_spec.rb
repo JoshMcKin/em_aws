@@ -26,6 +26,30 @@ module AWS
           end
         end
         
+        describe '#add_connection?' do
+          it "should be true if @pool_data does not have data for the url"do
+            @em_connection_pool.add_connection?("http://www.testurl123.com/").should be_true 
+          end
+      
+          it "should be true if @pool_data has data but the number of connnections has not reached the pool_size" do
+            @em_connection_pool.instance_variable_set(:@pools,{"http://www.testurl123.com/" => ["connection"]})
+            @em_connection_pool.add_connection?("http://www.testurl123.com/").should be_true 
+          end
+          
+          it "should be false pool has reached pool_size" do
+            @em_connection_pool.instance_variable_set(:@pools,
+              {"http://www.testurl123.com/" => ["connection","connection","connection","connection","connection"]})
+            @em_connection_pool.add_connection?("http://www.testurl123.com/").should be_true 
+          end
+        end
+        
+        describe '#add_connection' do
+          it "should add connections for supplied url"do
+            @em_connection_pool.add_connection("http://www.testurl123.com/") 
+            @em_connection_pool.instance_variable_get(:@pools)["http://www.testurl123.com/"].should_not be_nil
+          end
+        end   
+        
         describe '#fetch_connection' do
           it "should raise Timeout::Error if an available is not found in time"do
             @em_connection_pool.stub(:available_pools).and_return([])
@@ -33,35 +57,43 @@ module AWS
           end
         end
 
-        context 'fibering' do
-          # Pretty sure this is how you would do threads with fibers
-          @em_connection_pool.instance_variable_set(:@never_block, true)
-          it "should be work" do             
+        context 'integration test with parallel requests' do
+          # 10 parallel requests
+          
+          it "should work" do             
             @requests_made = []
-
-            fibers = []  
-            10.times do 
-              fibers << Fiber.new do
-                EM.synchrony do                 
-                  @r = nil
-                  @em_connection_pool.run "http://www.testbadurl123.com/" do |connection|                 
-                    @r = connection.get({:keepalive => true}).response_header.status.to_i
-                  end
-                  @requests_made << @r
-                  Fiber.yield EM.stop
-                end         
+            EM.synchrony do 
+              @em_connection_pool.instance_variable_set(:@never_block, true)
+              fibers = []  
+              10.times do 
+                fibers << Fiber.new do                           
+                @em_connection_pool.run "http://www.testurl123.com/" do |connection|                 
+                  @requests_made << connection.get(:keep_alive => true).response_header.status.to_i      
+                  end  
+                end  
               end 
-                  
-              fibers.each do |f| 
-                f.resume if f.alive?
+              
+              fibers.each do |f|
+               f.resume
               end
-                  
+        
+              loop do  
+                done = true
+                fibers.each do |f|
+                  done = false if f.alive?
+                end
+                if done
+                  break
+                else
+                  EM::Synchrony.sleep(0.01)   
+                end
+              end
+    
+              @requests_made.length.should eql(10)
+              @em_connection_pool.instance_variable_get(:@pools)["http://www.testurl123.com/"].length.should eql(@em_connection_pool.instance_variable_get(:@pool_size))              
+
+              EM.stop
             end
-            # Make sure all our request were made
-            @requests_made.length.should eql(10)
-            
-            # If we were not thread safe the number of connections would not be 5
-            @em_connection_pool.instance_variable_get(:@pools)["http://www.testbadurl123.com/"].length.should eql(@em_connection_pool.instance_variable_get(:@pool_size))              
           end          
         end
       end
