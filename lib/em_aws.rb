@@ -22,3 +22,6 @@ module AWS
     end
   end
 end
+
+# Load monkey patch after loading aws
+require 'em_aws/core/session_signer'
