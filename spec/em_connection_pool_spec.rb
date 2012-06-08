@@ -68,7 +68,7 @@ module AWS
               10.times do 
                 fibers << Fiber.new do                           
                 @em_connection_pool.run "http://www.testurl123.com/" do |connection|                 
-                  @requests_made << connection.get(:keep_alive => true).response_header.status.to_i      
+                  @requests_made << connection.get(:keepalive => true).response_header.status    
                   end  
                 end  
               end 
