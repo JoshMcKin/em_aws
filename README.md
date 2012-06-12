@@ -25,6 +25,7 @@ In your environments files add:
 
     require 'aws-sdk'
     require 'aws/core/http/em_http_handler'
+    AWS.eager_autoload! # Lazyloading is not threadsafe
     AWS.config(
       :http_handler => AWS::Http::EMHttpHandler.new(
       :proxy => {:host => "http://myproxy.com", :port => 80}
