@@ -10,7 +10,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     addressable (2.2.8)
-    aws-sdk (1.5.2)
+    aws-sdk (1.5.4)
       httparty (~> 0.7)
       json (~> 1.4)
       nokogiri (>= 1.4.4)

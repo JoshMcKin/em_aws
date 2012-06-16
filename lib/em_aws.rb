@@ -7,9 +7,4 @@ require 'em-synchrony/em-http'
 require 'aws/core/autoloader'
 
 AWS.eager_autoload! # lazy load isn't thread safe
-module EmAws
-
-end
-
-# Load monkey patch after loading aws
-require 'em_aws/core/session_signer'
+module EmAws;end

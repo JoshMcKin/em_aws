@@ -1,35 +1,26 @@
 require 'spec_helper'
-
-describe AWS::Core::SessionSigner do
-  context '@create_mutex' do
-    it "should be a fiber safe mutex" do
-      AWS::Core::SessionSigner.instance_variable_get(:@create_mutex).should be_kind_of(EM::Synchrony::Thread::Mutex)
-    end
+require 'aws'
+describe AWS::Mutex do
+  it "should be a fiber safe mutex" do
+    AWS::Mutex.new.should be_kind_of(EM::Synchrony::Thread::Mutex)
   end
-
-  context '@session_mutex' do
-    let(:config) { double("config").as_null_object }
-    it "should be a fiber safe mutex" do
-      session_signer = AWS::Core::SessionSigner.new(config)
-      session_signer.instance_variable_get(:@session_mutex).should be_kind_of(EM::Synchrony::Thread::Mutex)
+  
+  it "should be a fiber mutex when called within AWS module" do
+    AWS.module_eval <<-STR
+    def self.mutex_new
+      Mutex.new
     end
+    STR
+
+    AWS.mutex_new.should be_kind_of(EM::Synchrony::Thread::Mutex)
+  end
+  
+  it "should not affect Mutex outside AWS" do
+    Mutex.new.should be_kind_of(Mutex)
   end
 end
 
-describe AWS::S3::MultipartUpload do
-  context '@increment_mutex' do
-    it "should be a fiber safe mutex" do
-      a = AWS::S3::MultipartUpload.new(:foo,1)
-      a.instance_variable_get(:@increment_mutex).should be_kind_of(EM::Synchrony::Thread::Mutex)
-    end
-  end
-  context '@completed_mutex' do
-    it "should be a fiber safe mutex" do
-      a = AWS::S3::MultipartUpload.new(:foo,1)
-      a.instance_variable_get(:@completed_mutex).should be_kind_of(EM::Synchrony::Thread::Mutex)
-    end
-  end
-end
+
 
 describe AWS::Kernel,'#sleep' do
   it "should be a fiber safe sleep from with AWS module" do
@@ -42,8 +33,18 @@ describe AWS::Kernel,'#sleep' do
     Kernel.sleep(1).should eql(1)
   end
   
+  it "should be a fiber mutex when called within AWS module" do
+    AWS.module_eval <<-STR
+    def self.sleep(time)
+      Kernel.sleep(time)
+    end
+    STR
+    EM::Synchrony.stub(:sleep).and_return("fiber safe")
+    AWS.sleep(0.01).should eql("fiber safe")
+  end 
+  
   it "should not interfer with other Kernel methods" do     
-   lambda {AWS::Kernel.rand}.should_not raise_error
+    lambda {AWS::Kernel.rand}.should_not raise_error
   end
 end
 
