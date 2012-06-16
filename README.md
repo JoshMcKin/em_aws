@@ -51,4 +51,10 @@ All requests to AWS will use EM-Synchrony's implementation of em-http-request fo
 * Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
 
 ## Thanks
+
 Code based on HTTParty Hander in [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc)
+
+## License
+
+EmAws [license](https://github.com/JoshMcKin/em_aws/blob/master/LICENSE.txt)
+AWS-SDK [license](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/LICENSE.txt)
