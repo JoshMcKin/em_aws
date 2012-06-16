@@ -1,8 +1,7 @@
 require 'em-synchrony'
 require 'em-synchrony/thread'
 module AWS
-  
-  # Use EM::Synchrony sleep
+  # Use EM::Synchrony.sleep for all Kernel.sleep in AWS
   DupKernel = Kernel
   
   class PatchKernel
@@ -18,7 +17,6 @@ module AWS
   
   Kernel = PatchKernel
   
-  # Use a fiber safe mutex
-  Mutex = EM::Synchrony::Thread::Mutex
-    
+  # Use a fiber safe mutex for Mutex in AWS
+  Mutex = EM::Synchrony::Thread::Mutex  
 end

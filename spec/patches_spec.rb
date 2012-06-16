@@ -20,8 +20,6 @@ describe AWS::Mutex do
   end
 end
 
-
-
 describe AWS::Kernel,'#sleep' do
   it "should be a fiber safe sleep from with AWS module" do
     EM::Synchrony.stub(:sleep).and_return("fiber safe")
