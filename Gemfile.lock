@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    em_aws (0.1.5)
+    em_aws (0.1.6)
       aws-sdk
       em-http-request
       em-synchrony
