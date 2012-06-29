@@ -1,13 +1,14 @@
 require 'em-synchrony'
 require 'em-synchrony/thread'
 
-Mutex.class_eval do
-  class << self
-    alias :mutex_new :new
-    def new    
-      return EM::Synchrony::Thread::Mutex.new   if defined?(EM) && EM.reactor_running?
-      mutex_new
-    end
+# Scope the Mutex constant override to within AWS. May cause constant override
+# warnings in newer ruby versions
+module AWS
+  Mutex = EM::Synchrony::Thread::Mutex
+  
+  # easy access for testing
+  def self.mutex
+    Mutex
   end
 end
 

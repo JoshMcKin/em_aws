@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    em_aws (0.1.6)
+    em_aws (0.1.7)
       aws-sdk
       em-http-request
       em-synchrony
@@ -10,7 +10,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     addressable (2.2.8)
-    aws-sdk (1.5.4)
+    aws-sdk (1.5.5)
       httparty (~> 0.7)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
@@ -28,8 +28,8 @@ GEM
       eventmachine (>= 1.0.0.beta.4)
     em-synchrony (1.0.2)
       eventmachine (>= 1.0.0.beta.1)
-    eventmachine (1.0.0.rc.2)
-    eventmachine (1.0.0.rc.2-java)
+    eventmachine (1.0.0.rc.4)
+    eventmachine (1.0.0.rc.4-java)
     http_parser.rb (0.5.3)
     http_parser.rb (0.5.3-java)
     httparty (0.8.3)

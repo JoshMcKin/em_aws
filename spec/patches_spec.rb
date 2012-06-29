@@ -3,7 +3,14 @@ require 'aws'
 describe Mutex do
   it "should be a fiber safe mutex" do
     EM.synchrony do
-      Mutex.new.should be_kind_of(EM::Synchrony::Thread::Mutex)
+      AWS::Mutex.new.should be_kind_of(EM::Synchrony::Thread::Mutex)
+      EM.stop
+    end
+  end
+  
+  it "should be a fiber safe mutex" do
+    EM.synchrony do
+      AWS.mutex.new.should be_kind_of(EM::Synchrony::Thread::Mutex)
       EM.stop
     end
   end
@@ -26,4 +33,3 @@ describe Kernel,'#sleep' do
     Kernel.sleep(1).should eql(1)
   end
 end
-
