@@ -134,7 +134,7 @@ module AWS
         def to_aws_headers(response_headers)
           aws_headers = {}
           response_headers.each_pair do  |k,v|
-            key = k.underscore.gsub(/\_/,'-')
+            key = k.downcase.gsub(/\_/,'-')
             if (key == "x-amz-expiration" || key == 'x-amz-restore')
               aws_headers[key] = [v]
             else
