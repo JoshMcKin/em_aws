@@ -125,15 +125,30 @@ module AWS
           else
             response.body = http_response.response
             response.status = http_response.response_header.status.to_i
-            response.headers = http_response.response_header.to_hash
+            response.headers = to_aws_headers(http_response.response_header.to_hash)
           end
-        end  
+        end
+        
+        # AWS-SDK expects headers to be downcase and hyphenated, but em-http-request
+        # returns heads that are caps and underscored
+        def to_aws_headers(response_headers)
+          aws_headers = {}
+          response_headers.each_pair do  |k,v|
+            key = k.underscore.gsub(/\_/,'-')
+            if (key == "x-amz-expiration" || key == 'x-amz-restore')
+              aws_headers[key] = [v]
+            else
+              aws_headers[key] = v
+            end
+          end
+          aws_headers
+        end
       end
     end
   end
 
   # We move this from AWS::Http to AWS::Core::Http, but we want the
-  # previous default handler to remain accessible from its old namesapce
+  # previous default handler to remain accessible from its old namespace
   # @private
   module Http
     class EMHttpHandler < Core::Http::EMHttpHandler; end
