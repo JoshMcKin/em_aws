@@ -26,7 +26,7 @@ module AWS
         # @return [Hash] The default options to send to EM-Synchrony on each
         # request.
         attr_reader :default_request_options
-             
+        attr_accessor :status_0_retries      
         # Constructs a new HTTP handler using EM-Synchrony.
         #
         # @param [Hash] options Default options to send to EM-Synchrony on
@@ -40,6 +40,7 @@ module AWS
         def initialize options = {}
           #puts "Using EM-Synchrony for AWS requests"
           @default_request_options = options
+          @status_0_retries = 2
         end
         
         def fetch_url(request)
@@ -103,7 +104,7 @@ module AWS
           end
         end
                 
-        def handle_it(request, response)
+        def handle_it(request, response, retries=0)
           #puts "Using EM!!!!"
           # get, post, put, delete, head
           method = request.http_method.downcase.to_sym  
@@ -117,8 +118,16 @@ module AWS
           begin
             http_response = fetch_response(url,method,opts)                  
             response.status = http_response.response_header.status.to_i
-            response.headers = to_aws_headers(http_response.response_header.raw.to_hash)
-            response.body = http_response.response if response.status < 300
+            if response.status == 0
+              if retries <= status_0_retries
+                handle_it(request, response, (retries + 1))
+              else
+                response.network_error = true  
+              end
+            else
+              response.headers = to_aws_headers(http_response.response_header.raw.to_hash)
+              response.body = http_response.response if response.status < 300
+            end
           rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
             response.network_error = true  
           end

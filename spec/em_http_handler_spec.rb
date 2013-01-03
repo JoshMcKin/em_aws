@@ -46,17 +46,8 @@ module AWS::Core
         be_an(AWS::Core::Http::EMHttpHandler)
       end
 
-      describe '#initialize' do
-        it 'should set the default request options' do
-          described_class.new(:foo => "BAR").default_request_options.
-            should == { :foo => "BAR" }
-        end
-      end
-
       describe '#handle' do
-
         context 'timeouts' do
-
           it 'should rescue Timeout::Error' do
             handler.stub(:fetch_response).
               and_raise(Timeout::Error)
@@ -71,13 +62,12 @@ module AWS::Core
               should_not raise_error
           end
 
-          it 'should indicate that there was a timeout' do
+          it 'should indicate that there was a network_error' do
             handler.stub(:fetch_response).
               and_raise(Errno::ETIMEDOUT)
             handler.handle(req, resp)
-            resp.timeout?.should be_true
+            resp.network_error.should be_true
           end
-
         end
 
         context 'default request options' do
@@ -93,11 +83,10 @@ module AWS::Core
           it 'uses the default when the request option is not set' do
             #puts handler.default_request_options
             handler.default_request_options[:private_key_file].should == "blarg"
-          end
-          
-        end
-        
+          end         
+        end 
       end
+      
       describe '#fetch_proxy' do
         context ':proxy_uri' do
           it 'passes proxy address and port from the request' do
@@ -105,7 +94,6 @@ module AWS::Core
             handler.fetch_proxy(req)[:proxy][:host].should == 'proxy.com'
             handler.fetch_proxy(req)[:proxy][:port].should == 443
           end
-
         end
         
         describe '#fetch_ssl' do
@@ -118,7 +106,6 @@ module AWS::Core
           end
            
           context 'CA cert path' do
-
             context 'use_ssl? is true' do
 
               before(:each) { req.use_ssl = true }
