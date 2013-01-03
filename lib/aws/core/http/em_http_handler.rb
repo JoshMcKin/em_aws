@@ -106,42 +106,22 @@ module AWS
         def handle_it(request, response)
           #puts "Using EM!!!!"
           # get, post, put, delete, head
-          method = request.http_method.downcase.to_sym
-          
-          opts = default_request_options.merge(request_options(request))
-          
+          method = request.http_method.downcase.to_sym  
+          opts = default_request_options.merge(request_options(request))  
           if (method == :get)
             opts[:query] = request.body
           else
             opts[:body] = request.body
           end
-          
           url = fetch_url(request)
-          
           begin
-            http_response = fetch_response(url,method,opts)         
-          rescue Timeout::Error, Errno::ETIMEDOUT => e
-            response.timeout = true
-          else
-            response.body = http_response.response
+            http_response = fetch_response(url,method,opts)                  
             response.status = http_response.response_header.status.to_i
-            response.headers = to_aws_headers(http_response.response_header.to_hash)
+            response.headers = http_response.response_header.raw.to_hash
+            response.body = http_response.response if response.status < 300
+          rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
+            response.network_error = true  
           end
-        end
-        
-        # AWS-SDK expects headers to be downcase and hyphenated, but em-http-request
-        # returns heads that are caps and underscored
-        def to_aws_headers(response_headers)
-          aws_headers = {}
-          response_headers.each_pair do  |k,v|
-            key = k.downcase.gsub(/\_/,'-')
-            if (key == "x-amz-expiration" || key == 'x-amz-restore')
-              aws_headers[key] = [v]
-            else
-              aws_headers[key] = v
-            end
-          end
-          aws_headers
         end
       end
     end
