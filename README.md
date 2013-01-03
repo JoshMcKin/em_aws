@@ -1,8 +1,5 @@
-# em_aws
-An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/JoshMcKin/aws-sdk-for-ruby)
-
-This code has be submitted to AWS-SKD see: [pull request](https://github.com/amazonwebservices/aws-sdk-for-ruby/pull/14). 
-Until approval (or if it is declined) I created this gem.
+# EmAws
+An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/amazonwebservices/aws-sdk-for-ruby/)
 
 ## Installation
 
@@ -25,6 +22,7 @@ In your environments files add:
 
     require 'aws-sdk'
     require 'aws/core/http/em_http_handler'
+    AWS.eager_autoload! # AWS lazyloading is not threadsafe
     AWS.config(
       :http_handler => AWS::Http::EMHttpHandler.new(
       :proxy => {:host => "http://myproxy.com", :port => 80}
@@ -69,4 +67,10 @@ are created lazy, so pools grow until they meet the set pool size.
 * Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
 
 ## Thanks
+
 Code based on HTTParty Hander in [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc)
+
+## License
+
+EmAws [license](https://github.com/JoshMcKin/em_aws/blob/master/LICENSE.txt)
+AWS-SDK [license](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/LICENSE.txt)

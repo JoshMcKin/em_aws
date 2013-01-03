@@ -1,6 +1,7 @@
 #$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 #$LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'em_aws'
+require 'aws/core/http/em_http_handler'
 require 'rspec'
 require 'bundler/setup'
 require 'logger'

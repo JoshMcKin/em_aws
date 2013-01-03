@@ -12,7 +12,6 @@
 # language governing permissions and limitations under the License.
 
 require 'spec_helper'
-
 module AWS::Core
   module Http
     describe EMHttpHandler do

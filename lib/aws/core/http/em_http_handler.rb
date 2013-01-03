@@ -1,9 +1,12 @@
 # http://docs.amazonwebservices.com/AWSRubySDK/latest/
 require "em-synchrony"
 require "em-synchrony/em-http"
-module AWS 
+require 'em-synchrony/thread'
+module AWS
+  
   module Core
     module Http
+      
       # An EM-Synchrony implementation for Fiber based asynchronous ruby application.
       # See https://github.com/igrigorik/async-rails and 
       # http://www.mikeperham.com/2010/04/03/introducing-phat-an-asynchronous-rails-app/
@@ -14,23 +17,16 @@ module AWS
       # require 'aws-sdk'
       # require 'aws/core/http/em_http_handler'
       # AWS.config(
-      #   :http_handler => AWS::Http::EMHttpHandler.new(
-      #     :pool_size => 20,
-      #     :inactivity_timeout => 30, # number of seconds to timeout stale connections in the pool
-      #     :pool_timeout => 1, the maximum number of seconds to block while waiting for a connection, before a Time::Error is raised.
-      #     :proxy => {:host => "http://myproxy.com",:port => 80})
+      # :http_handler => AWS::Http::EMHttpHandler.new(
+      # :proxy => {:host => "http://myproxy.com",:port => 80}
       # )
-      # EMHttpHandler options
-      # * :pool_size => number of connections in your connection pool, defaults to 0, which disables to pool entirely
-      # * :inactivity_timeout => number of seconds after which to close stale pool connections default is 0, 
-      # which means connections will not go stale useless forced by the client
-      # * :connect_timeout => Timeout for establishing connections default is 10
-      # * See https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests for request options (client options are not set)
+      # )
+      #
       class EMHttpHandler
         # @return [Hash] The default options to send to EM-Synchrony on each
         # request.
         attr_reader :default_request_options
-          
+             
         # Constructs a new HTTP handler using EM-Synchrony.
         #
         # @param [Hash] options Default options to send to EM-Synchrony on
@@ -40,31 +36,32 @@ module AWS
         # ignored. If you need to set the CA file, you should use the
         # +:ssl_ca_file+ option to {AWS.config} or
         # {AWS::Configuration} instead.
-        # Defaults pool_size to 0
         def initialize options = {}
-          options[:pool_size] ||= 0
+          #puts "Using EM-Synchrony for AWS requests"
           @default_request_options = options
           @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
-        end      
-
+        end
+        
         def fetch_url(request)
           url = nil
           if request.use_ssl?
-            url = "https://#{request.host}:443"
+            url = "https://#{request.host}:443#{request.uri}"
           else
-            url = "http://#{request.host}"
+            url = "http://#{request.host}#{request.uri}"
           end
           url
         end
-           
+                   
         def fetch_headers(request)
           # Net::HTTP adds this header for us when the body is
           # provided, but it messes up signing
           headers = { 'content-type' => '' }
+  
           # headers must have string values (net http calls .strip on them)
           request.headers.each_pair do |key,value|
             headers[key] = value.to_s
           end
+  
           {:head => headers}
         end
         
@@ -93,14 +90,13 @@ module AWS
         
         def fetch_response(url,method,opts={})
           return EM::HttpRequest.new(url).send(method, opts) unless @pool
-          
           @pool.run(url) do |connection|
             connection.send(method, {:keepalive => true}.merge(opts))
-          end  
-        end     
-        
+          end
+        end 
+    
         def handle(request,response)
-          if EM::reactor_running?
+          if EM::reactor_running? 
             handle_it(request, response)    
           else
             EM.synchrony do
@@ -108,39 +104,49 @@ module AWS
               EM.stop
             end
           end
-        end   
-        
+        end
+                
         def handle_it(request, response)
           #puts "Using EM!!!!"
           # get, post, put, delete, head
-          method = request.http_method.downcase.to_sym
-          
-          opts = default_request_options.merge(request_options(request))
-          opts[:path] = request.uri
-          
+          method = request.http_method.downcase.to_sym  
+          opts = default_request_options.merge(request_options(request))  
           if (method == :get)
             opts[:query] = request.body
           else
             opts[:body] = request.body
           end
-          
           url = fetch_url(request)
-          begin        
-            http_response = fetch_response(url,method,opts)         
-          rescue Timeout::Error, Errno::ETIMEDOUT => e
-            response.timeout = true
-          else
-            response.body = http_response.response
+          begin
+            http_response = fetch_response(url,method,opts)                  
             response.status = http_response.response_header.status.to_i
-            response.headers = http_response.response_header.to_hash
+            response.headers = to_aws_headers(http_response.response_header.raw.to_hash)
+            response.body = http_response.response if response.status < 300
+          rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
+            response.network_error = true  
           end
-        end  
+        end
+        
+        # AWS needs all headers downcased, and for some reason x-amz-expiration and
+        # x-amz-restore need to be arrays
+        def to_aws_headers(response_headers)
+          aws_headers = {}
+          response_headers.each_pair do  |k,v|
+            key = k.downcase
+            if (key == "x-amz-expiration" || key == 'x-amz-restore')
+              aws_headers[key] = [v]
+            else
+              aws_headers[key] = v
+            end
+          end
+          response_headers.merge(aws_headers)
+        end
       end
     end
   end
 
   # We move this from AWS::Http to AWS::Core::Http, but we want the
-  # previous default handler to remain accessible from its old namesapce
+  # previous default handler to remain accessible from its old namespace
   # @private
   module Http
     class EMHttpHandler < Core::Http::EMHttpHandler; end
