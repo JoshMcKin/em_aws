@@ -22,10 +22,11 @@ module AWS
         # :never_block - if set to true, a connection will always be returned, but 
         # these extra connections are not added to the pool when the request is completed
         def initialize(options={})
+          options[:never_block] ||= true
           @pools = {}
           @pool_data = {}
           @pool_size = (options[:pool_size] || 5)
-          @never_block = (options[:never_block] || false)
+          @never_block = (options[:never_block])
           @inactivity_timeout = (options[:inactivity_timeout] || 0)
           @pool_timeout = (options[:pool_timeout] || 0.5) 
         end
@@ -77,7 +78,11 @@ module AWS
           alarm = (Time.now + @pool_timeout)       
           # block until we get an available connection or Timeout::Error     
           while connection.nil?
-            raise Timeout::Error, "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws." if alarm <= Time.now
+            if alarm <= Time.now
+              message = "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws or setting :never_block to true."
+              AWS.config.logger.error message
+              raise Timeout::Error, message
+            end
             connection = available_pools(url).shift
             if connection.nil? && (@never_block)
               AWS.config.logger.info "Adding AWS connection to #{url} for never_block, will not be returned to pool."
