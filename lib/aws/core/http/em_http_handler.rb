@@ -117,11 +117,26 @@ module AWS
           begin
             http_response = fetch_response(url,method,opts)                  
             response.status = http_response.response_header.status.to_i
-            response.headers = http_response.response_header.raw.to_hash
+            response.headers = to_aws_headers(http_response.response_header.raw.to_hash)
             response.body = http_response.response if response.status < 300
           rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
             response.network_error = true  
           end
+        end
+        
+        # AWS needs all headers downcased, and for some reason x-amz-expiration and
+        # x-amz-restore need to be arrays
+        def to_aws_headers(response_headers)
+          aws_headers = {}
+          response_headers.each_pair do  |k,v|
+            key = k.downcase
+            if (key == "x-amz-expiration" || key == 'x-amz-restore')
+              aws_headers[key] = [v]
+            else
+              aws_headers[key] = v
+            end
+          end
+          response_headers.merge(aws_headers)
         end
       end
     end
