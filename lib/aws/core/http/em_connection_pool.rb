@@ -104,12 +104,14 @@ module AWS
         end
         
         def return_connection(url,connection)
-          if (@pools[url].nil? || (@pools[url].length == @pool_size))
-            connection.conn.close_connection if connection.conn
-          else
-            @pools[url] << connection 
+          _fiber_mutex.synchronize do
+            if (@pools[url].nil? || (@pools[url].length == @pool_size))
+              connection.conn.close_connection if connection.conn
+            else
+              @pools[url] << connection 
+            end
+            @pools[url]
           end
-          @pools[url]
         end
       end
     end
