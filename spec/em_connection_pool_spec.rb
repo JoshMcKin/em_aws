@@ -53,7 +53,8 @@ module AWS
         describe '#fetch_connection' do
           it "should raise Timeout::Error if an available is not found in time"do
             @em_connection_pool.stub(:available_pools).and_return([])
-            lambda { @em_connection_pool.fetch_connection('some_url.com')}.should raise_error(Timeout::Error)
+            @em_connection_pool.instance_variable_set(:@never_block, false)
+            lambda { @em_connection_pool.fetch_connection('http://some_url.com')}.should raise_error(Timeout::Error)
           end
         end
 
