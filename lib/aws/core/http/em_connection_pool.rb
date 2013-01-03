@@ -92,7 +92,7 @@ module AWS
           connection    
         end
         
-        # Make sure we have a good connection. This should not be nesseccary 
+        # Make sure we have a good connection. This should not be necessary 
         # in em-http-request master, but better safe than sorry...
         def santize_connection(connection)
           if connection.conn && connection.conn.error?
