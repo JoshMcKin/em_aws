@@ -43,8 +43,7 @@ are created lazy, so pools grow until they meet the set pool size.
       :http_handler => AWS::Http::EMHttpHandler.new({
         :pool_size => 20,
         :inactivity_timeout => 30, # number of seconds to timeout stale connections in the pool
-        :never_block => true, # if we run out of connections create a new one but 
-                            # close and do return it to the pool when done
+        :never_block => true, # if we run out of connections create a new one
         :proxy => {:host => "http://myproxy.com",:port => 80})
     )
 

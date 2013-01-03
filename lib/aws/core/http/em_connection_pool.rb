@@ -15,12 +15,11 @@ module AWS
         # * :pool_size - number of connections for each pool
         # * :inactivity_timeout - number of seconds to wait before disconnecting, 
         # setting to 0 means the connection will not be closed
-        # * :pool_timeout - the amount of seconds to block waiting for an availble connection, 
+        # * :pool_timeout - the amount of seconds to block waiting for an available connection, 
         # because this is blocking it should be an extremely short amount of 
         # time default to 0.5 seconds, if you need more consider enlarging your pool
         # instead of raising this number
-        # :never_block - if set to true, a connection will always be returned, but 
-        # these extra connections are not added to the pool when the request is completed
+        # :never_block - if set to true, a connection will always be returned
         def initialize(options={})
           options[:never_block] ||= true
           @pools = {}
