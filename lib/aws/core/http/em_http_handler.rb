@@ -19,7 +19,7 @@ module AWS
       #   :http_handler => AWS::Http::EMHttpHandler.new(
       #   :proxy => {:host => "http://myproxy.com",
       #   :port => 80,
-      #   :pool_size => 20 # set to nil or 0 to not use pool
+      #   :pool_size => 20 # not set by default which disables conneciton pooling
       #   }))
       #
       class EMHttpHandler
@@ -93,10 +93,10 @@ module AWS
     
         def handle(request,response)
           if EM::reactor_running? 
-            handle_it(request, response)    
+            process_request(request, response)    
           else
             EM.synchrony do
-              handle_it(request, response)
+              process_request(request, response)
               EM.stop
             end
           end
@@ -106,7 +106,7 @@ module AWS
         # returns a status of 0 with nil for header and body, in such situations
         # we retry as many times as status_0_retries is set. If our retries exceed
         # status_0_retries we assume there is a network error
-        def handle_it(request, response, retries=0)      
+        def process_request(request, response, retries=0)      
           method = request.http_method.downcase.to_sym  # get, post, put, delete, head
           opts = default_request_options.merge(request_options(request))  
           if (method == :get)
@@ -120,7 +120,7 @@ module AWS
             response.status = http_response.response_header.status.to_i
             if response.status == 0
               if retries <= status_0_retries.to_i
-                handle_it(request, response, (retries + 1))
+                process_request(request, response, (retries + 1))
               else
                 response.network_error = true  
               end
