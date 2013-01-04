@@ -19,16 +19,15 @@ module AWS
       #   :http_handler => AWS::Http::EMHttpHandler.new(
       #   :proxy => {:host => "http://myproxy.com",
       #   :port => 80,
-      #   :pool_size => 20 # not set by default which disables conneciton pooling
+      #   :pool_size => 20 # not set by default which disables connection pooling
       #   }))
-      #
       class EMHttpHandler
-        # @return [Hash] The default options to send to EM-Synchrony on each
-        # request.
+        
+        # @return [Hash] The default options to send to EM-Synchrony on each request.
         attr_reader :default_request_options
-        attr_accessor :status_0_retries      
+        attr_accessor :status_0_retries  
+        
         # Constructs a new HTTP handler using EM-Synchrony.
-        #
         # @param [Hash] options Default options to send to EM-Synchrony on
         # each request. These options will be sent to +get+, +post+,
         # +head+, +put+, or +delete+ when a request is made. Note
@@ -37,7 +36,6 @@ module AWS
         # +:ssl_ca_file+ option to {AWS.config} or
         # {AWS::Configuration} instead.
         def initialize options = {}
-          #puts "Using EM-Synchrony for AWS requests"
           @default_request_options = options
           @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
           @status_0_retries = 2 # set to 0 for no retries
