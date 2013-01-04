@@ -1,5 +1,5 @@
 # EmAws
-An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/aws/aws-sdk-for-ruby/)
+An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/aws/aws-sdk-ruby)
 
 ## Installation
 
@@ -8,7 +8,7 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
     $ gem install em_aws
 
 ## Rails 3 setup (no rails 2 sorry)
-Setup [AWS-SKD](https://github.com/aws/aws-sdk-for-ruby/blob/master/README.rdoc) as you would normally.
+Setup [AWS-SKD](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
 
 Assuming you've already setup async-rails, add em_aws to you gemfile:
     
@@ -48,7 +48,7 @@ are created lazy, so pools grow until they meet the set pool size.
 
 ## References
 
-  [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby)
+  [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby)
 
   [Async-Rails](https://github.com/igrigorik/async-rails)
 
@@ -66,7 +66,7 @@ are created lazy, so pools grow until they meet the set pool size.
 
 ## Thanks
 
-Code based on HTTParty Hander in [aws-sdk](https://github.com/aws/aws-sdk-for-ruby/blob/master/README.rdoc)
+Code based on HTTP Handers in [aws-sdk](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc)
 
 ## License
 
