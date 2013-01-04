@@ -1,5 +1,5 @@
 # EmAws
-An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/amazonwebservices/aws-sdk-for-ruby/)
+An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/aws/aws-sdk-for-ruby/)
 
 ## Installation
 
@@ -8,7 +8,7 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
     $ gem install em_aws
 
 ## Rails 3 setup (no rails 2 sorry)
-Setup [AWS-SKD](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc) as you would normally.
+Setup [AWS-SKD](https://github.com/aws/aws-sdk-for-ruby/blob/master/README.rdoc) as you would normally.
 
 Assuming you've already setup async-rails, add em_aws to you gemfile:
     
@@ -25,8 +25,7 @@ In your environments files add:
     AWS.eager_autoload! # AWS lazyloading is not threadsafe
     AWS.config(
       :http_handler => AWS::Http::EMHttpHandler.new(
-      :proxy => {:host => "http://myproxy.com", :port => 80}
-       ));
+      :proxy => {:host => "http://myproxy.com", :port => 80}))
 
 Your done. 
 
@@ -42,8 +41,8 @@ are created lazy, so pools grow until they meet the set pool size.
     AWS.config(
       :http_handler => AWS::Http::EMHttpHandler.new({
         :pool_size => 20,
-        :inactivity_timeout => 30, # number of seconds to timeout stale connections in the pool
-        :never_block => true, # if we run out of connections create a new one
+        :inactivity_timeout => 0, # number of seconds to timeout stale connections in the pool,
+        :never_block => true, # if we run out of connections, create a new one
         :proxy => {:host => "http://myproxy.com",:port => 80})
     )
 
@@ -67,9 +66,9 @@ are created lazy, so pools grow until they meet the set pool size.
 
 ## Thanks
 
-Code based on HTTParty Hander in [aws-sdk](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/README.rdoc)
+Code based on HTTParty Hander in [aws-sdk](https://github.com/aws/aws-sdk-for-ruby/blob/master/README.rdoc)
 
 ## License
 
 EmAws [license](https://github.com/JoshMcKin/em_aws/blob/master/LICENSE.txt)
-AWS-SDK [license](https://github.com/amazonwebservices/aws-sdk-for-ruby/blob/master/LICENSE.txt)
+AWS-SDK [license](https://github.com/aws/aws-sdk-for-ruby/blob/master/LICENSE.txt)

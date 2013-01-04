@@ -11,14 +11,14 @@ module AWS
         # most connection pools
         # Stores data concerning pools, like current size, last fetched
         # 
-        # OPTIONS
+        # Options:
         # * :pool_size - number of connections for each pool
         # * :inactivity_timeout - number of seconds to wait before disconnecting, 
-        # setting to 0 means the connection will not be closed
+        #   setting to 0 means the connection will not be closed
         # * :pool_timeout - the amount of seconds to block waiting for an available connection, 
-        # because this is blocking it should be an extremely short amount of 
-        # time default to 0.5 seconds, if you need more consider enlarging your pool
-        # instead of raising this number
+        #   because this is blocking it should be an extremely short amount of 
+        #   time default to 0.5 seconds, if you need more consider enlarging your pool
+        #   instead of raising this number
         # :never_block - if set to true, a connection will always be returned
         def initialize(options={})
           options[:never_block] ||= true
@@ -26,14 +26,16 @@ module AWS
           @pool_data = {}
           @pool_size = (options[:pool_size] || 5)
           @never_block = (options[:never_block])
-          @inactivity_timeout = (options[:inactivity_timeout] || 0)
+          @inactivity_timeout = (options[:inactivity_timeout].to_i)
           @pool_timeout = (options[:pool_timeout] || 0.5) 
         end
         
+        # A fiber safe mutex
         def _fiber_mutex
           @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
         end
         
+        # Returns a pool for the associated url
         def available_pools(url)
           _fiber_mutex.synchronize do
             add_connection(url) if add_connection?(url)
@@ -62,7 +64,7 @@ module AWS
           EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
         end
         
-        # run the block on the retrieved connection, then return the connection
+        # Run the block on the retrieved connection, then return the connection
         # back to the pool.
         def run(url, &block)
           connection = santize_connection(fetch_connection(url))
@@ -71,7 +73,7 @@ module AWS
           return_connection(url,connection) 
         end
         
-        # return an available connection
+        # Fetch an available connection or raise an error
         def fetch_connection(url)         
           connection = nil
           alarm = (Time.now + @pool_timeout)       
@@ -91,8 +93,7 @@ module AWS
           connection    
         end
         
-        # Make sure we have a good connection. This should not be necessary 
-        # in em-http-request master, but better safe than sorry...
+        # Make sure we have a good connection.
         def santize_connection(connection)
           if connection.conn && connection.conn.error?
             AWS.config.logger.info "Reconnecting to AWS: #{EventMachine::report_connection_error_status(connection.conn.instance_variable_get(:@signature))}"
@@ -102,6 +103,7 @@ module AWS
           connection
         end
         
+        # Return connections to pool if allowed, otherwise closes connection
         def return_connection(url,connection)
           _fiber_mutex.synchronize do
             if (@pools[url].nil? || (@pools[url].length == @pool_size))

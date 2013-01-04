@@ -3,7 +3,6 @@ require "em-synchrony"
 require "em-synchrony/em-http"
 require 'em-synchrony/thread'
 module AWS
-  
   module Core
     module Http
       
@@ -17,10 +16,11 @@ module AWS
       # require 'aws-sdk'
       # require 'aws/core/http/em_http_handler'
       # AWS.config(
-      # :http_handler => AWS::Http::EMHttpHandler.new(
-      # :proxy => {:host => "http://myproxy.com",:port => 80}
-      # )
-      # )
+      #   :http_handler => AWS::Http::EMHttpHandler.new(
+      #   :proxy => {:host => "http://myproxy.com",
+      #   :port => 80,
+      #   :pool_size => 20 # set to nil or 0 to not use pool
+      #   }))
       #
       class EMHttpHandler
         # @return [Hash] The default options to send to EM-Synchrony on each
@@ -40,7 +40,7 @@ module AWS
           #puts "Using EM-Synchrony for AWS requests"
           @default_request_options = options
           @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
-          @status_0_retries = 2
+          @status_0_retries = 2 # set to 0 for no retries
         end
         
         def fetch_url(request)
@@ -54,15 +54,10 @@ module AWS
         end
                    
         def fetch_headers(request)
-          # Net::HTTP adds this header for us when the body is
-          # provided, but it messes up signing
           headers = { 'content-type' => '' }
-  
-          # headers must have string values (net http calls .strip on them)
           request.headers.each_pair do |key,value|
             headers[key] = value.to_s
           end
-  
           {:head => headers}
         end
         
@@ -106,11 +101,13 @@ module AWS
             end
           end
         end
-                
-        def handle_it(request, response, retries=0)
-          #puts "Using EM!!!!"
-          # get, post, put, delete, head
-          method = request.http_method.downcase.to_sym  
+        
+        # Builds and attempts the request. Occasionally under load em-http-request
+        # returns a status of 0 with nil for header and body, in such situations
+        # we retry as many times as status_0_retries is set. If our retries exceed
+        # status_0_retries we assume there is a network error
+        def handle_it(request, response, retries=0)      
+          method = request.http_method.downcase.to_sym  # get, post, put, delete, head
           opts = default_request_options.merge(request_options(request))  
           if (method == :get)
             opts[:query] = request.body
@@ -122,7 +119,7 @@ module AWS
             http_response = fetch_response(url,method,opts)                  
             response.status = http_response.response_header.status.to_i
             if response.status == 0
-              if retries <= status_0_retries
+              if retries <= status_0_retries.to_i
                 handle_it(request, response, (retries + 1))
               else
                 response.network_error = true  
