@@ -1,5 +1,5 @@
 # EmAws
-An EM-Synchrony handler for Ruby [AWS-SDK](https://github.com/aws/aws-sdk-ruby)
+An EM-Synchrony handler for Ruby [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby)
 
 ## Installation
 
@@ -8,7 +8,7 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
     $ gem install em_aws
 
 ## Rails 3 setup (no rails 2 sorry)
-Setup [AWS-SKD](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
+Setup [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
 
 Assuming you've already setup async-rails, add em_aws to you gemfile:
     
@@ -29,7 +29,7 @@ In your environments files add:
 
 Your done. 
 
-All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP request and fiber management.
+All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP requests and fiber management.
 
 ## Connection Pooling (keep-alive)
 To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set
@@ -66,9 +66,9 @@ are created lazy, so pools grow until they meet the set pool size.
 
 ## Thanks
 
-Code based on HTTP Handers in [aws-sdk](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc)
+Code based on HTTP Handers in [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc)
 
 ## License
 
 EmAws [license](https://github.com/JoshMcKin/em_aws/blob/master/LICENSE.txt)
-AWS-SDK [license](https://github.com/aws/aws-sdk-for-ruby/blob/master/LICENSE.txt)
+AWS-SDK-Ruby [license](https://github.com/aws/aws-sdk-for-ruby/blob/master/LICENSE.txt)
