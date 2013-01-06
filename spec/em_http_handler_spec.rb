@@ -91,8 +91,8 @@ module AWS::Core
         context ':proxy_uri' do
           it 'passes proxy address and port from the request' do
             req.proxy_uri = URI.parse('https://user:pass@proxy.com:443/path?query')
-            handler.fetch_proxy(req)[:proxy][:host].should == 'proxy.com'
-            handler.fetch_proxy(req)[:proxy][:port].should == 443
+            handler.send(:fetch_proxy,(req))[:proxy][:host].should == 'proxy.com'
+            handler.send(:fetch_proxy,(req))[:proxy][:port].should == 443
           end
         end
         
@@ -101,8 +101,8 @@ module AWS::Core
             req.use_ssl = true
             req.ssl_verify_peer = true
             req.ssl_ca_file = "something"
-            handler.fetch_ssl(req)[:private_key_file].should == "something"
-            handler.fetch_ssl(req)[:cert_chain_file].should == "something"
+            handler.send(:fetch_ssl,(req))[:private_key_file].should == "something"
+            handler.send(:fetch_ssl,(req))[:cert_chain_file].should == "something"
           end
            
           context 'CA cert path' do
@@ -118,21 +118,21 @@ module AWS::Core
                 end
 
                 it 'should use the ssl_ca_file attribute of the request' do
-                  handler.fetch_ssl(req)[:private_key_file].should == "foobar.txt"
+                  handler.send(:fetch_ssl,(req))[:private_key_file].should == "foobar.txt"
                 end
                   
                 it 'should use the ssl_ca_file attribute of the request' do
-                  handler.fetch_ssl(req)[:cert_chain_file].should == "foobar.txt"
+                  handler.send(:fetch_ssl,(req))[:cert_chain_file].should == "foobar.txt"
                 end
               end
 
               it 'should not set the ssl_ca_file option without ssl_verify_peer?' do
-                handler.fetch_ssl(req).should_not include(:private_key_file)
+                handler.send(:fetch_ssl,(req)).should_not include(:private_key_file)
               end
             end
 
             it 'should not set the ssl_ca_file option without use_ssl?' do
-              handler.fetch_ssl(req).should_not include(:private_key_file)
+              handler.send(:fetch_ssl,(req)).should_not include(:private_key_file)
             end
           end
         end      

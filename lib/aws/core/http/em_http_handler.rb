@@ -39,7 +39,20 @@ module AWS
           @default_request_options = options
           @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
           @status_0_retries = 2 # set to 0 for no retries
+        end 
+    
+        def handle(request,response)
+          if EM::reactor_running? 
+            process_request(request, response)    
+          else
+            EM.synchrony do
+              process_request(request, response)
+              EM.stop
+            end
+          end
         end
+        
+        private
         
         def fetch_url(request)
           url = nil
@@ -76,10 +89,17 @@ module AWS
           opts
         end
         
-        def request_options(request)
-          fetch_headers(request).
+        def fetch_request_options(request,method)
+          opts = default_request_options.
+            merge(fetch_headers(request).
             merge(fetch_proxy(request)).
-            merge(fetch_ssl(request))
+            merge(fetch_ssl(request)))  
+          if (method == :get)
+            opts[:query] = request.body
+          else
+            opts[:body] = request.body
+          end
+          opts
         end
         
         def fetch_response(url,method,opts={})
@@ -87,17 +107,22 @@ module AWS
           @pool.run(url) do |connection|
             connection.send(method, {:keepalive => true}.merge(opts))
           end
-        end 
-    
-        def handle(request,response)
-          if EM::reactor_running? 
-            process_request(request, response)    
-          else
-            EM.synchrony do
-              process_request(request, response)
-              EM.stop
+        end
+        
+        # AWS needs all headers downcased, and for some reason x-amz-expiration and
+        # x-amz-restore need to be arrays
+        def fetch_response_headers(response)
+          response_headers = response.response_header.raw.to_hash
+          aws_headers = {}
+          response_headers.each_pair do  |k,v|
+            key = k.downcase
+            if (key == "x-amz-expiration" || key == 'x-amz-restore')
+              aws_headers[key] = [v]
+            else
+              aws_headers[key] = v
             end
           end
+          response_headers.merge(aws_headers)
         end
         
         # Builds and attempts the request. Occasionally under load em-http-request
@@ -106,12 +131,7 @@ module AWS
         # status_0_retries we assume there is a network error
         def process_request(request, response, retries=0)      
           method = request.http_method.downcase.to_sym  # get, post, put, delete, head
-          opts = default_request_options.merge(request_options(request))  
-          if (method == :get)
-            opts[:query] = request.body
-          else
-            opts[:body] = request.body
-          end
+          opts = fetch_request_options(request,method)
           url = fetch_url(request)
           begin
             http_response = fetch_response(url,method,opts)                  
@@ -123,27 +143,12 @@ module AWS
                 response.network_error = true  
               end
             else
-              response.headers = to_aws_headers(http_response.response_header.raw.to_hash)
-              response.body = http_response.response if response.status < 300
+              response.headers = fetch_response_headers(http_response)
+              response.body = http_response.response
             end
           rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
             response.network_error = true  
           end
-        end
-        
-        # AWS needs all headers downcased, and for some reason x-amz-expiration and
-        # x-amz-restore need to be arrays
-        def to_aws_headers(response_headers)
-          aws_headers = {}
-          response_headers.each_pair do  |k,v|
-            key = k.downcase
-            if (key == "x-amz-expiration" || key == 'x-amz-restore')
-              aws_headers[key] = [v]
-            else
-              aws_headers[key] = v
-            end
-          end
-          response_headers.merge(aws_headers)
         end
       end
     end
