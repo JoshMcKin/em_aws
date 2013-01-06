@@ -129,7 +129,7 @@ module AWS
         # returns a status of 0 with nil for header and body, in such situations
         # we retry as many times as status_0_retries is set. If our retries exceed
         # status_0_retries we assume there is a network error
-        def process_request(request, response, retries=0)      
+        def process_request(request, response, retries=0,&read_block)      
           method = request.http_method.downcase.to_sym  # get, post, put, delete, head
           opts = fetch_request_options(request,method)
           url = fetch_url(request)
@@ -144,7 +144,11 @@ module AWS
               end
             else
               response.headers = fetch_response_headers(http_response)
-              response.body = http_response.response
+              if (block_given? && response.status < 300)
+                response.stream(&read_block)
+              else
+                response.body = http_response.response
+              end
             end
           rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
             response.network_error = true  
