@@ -41,12 +41,12 @@ module AWS
           @status_0_retries = 2 # set to 0 for no retries
         end 
     
-        def handle(request,response)
+        def handle(request,response,&read_block)
           if EM::reactor_running? 
-            process_request(request, response)    
+            process_request(request,response,&read_block)    
           else
             EM.synchrony do
-              process_request(request, response)
+              process_request(request,response,&read_block)
               EM.stop
             end
           end
@@ -92,8 +92,8 @@ module AWS
         def fetch_request_options(request,method)
           opts = default_request_options.
             merge(fetch_headers(request).
-            merge(fetch_proxy(request)).
-            merge(fetch_ssl(request)))  
+              merge(fetch_proxy(request)).
+              merge(fetch_ssl(request)))  
           if (method == :get)
             opts[:query] = request.body
           else
@@ -102,11 +102,19 @@ module AWS
           opts
         end
         
-        def fetch_response(url,method,opts={})
-          return EM::HttpRequest.new(url).send(method, opts) unless @pool
-          @pool.run(url) do |connection|
-            connection.send(method, {:keepalive => true}.merge(opts))
+        def fetch_response(url,method,opts={},&read_block)
+          if @pool
+            @pool.run(url) do |connection|
+              req = connection.send(method, {:keepalive => true}.merge(opts))
+              req.stream &read_block if block_given?
+              return  EM::Synchrony.sync req
+            end
+          else
+            req = EM::HttpRequest.new(url).send(method,opts)
+            req.stream &read_block if block_given?
+            return  EM::Synchrony.sync req
           end
+          nil
         end
         
         # AWS needs all headers downcased, and for some reason x-amz-expiration and
@@ -129,27 +137,23 @@ module AWS
         # returns a status of 0 with nil for header and body, in such situations
         # we retry as many times as status_0_retries is set. If our retries exceed
         # status_0_retries we assume there is a network error
-        def process_request(request, response, retries=0,&read_block)      
-          method = request.http_method.downcase.to_sym  # get, post, put, delete, head
+        def process_request(request,response,retries=0,&read_block)      
+          method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
           opts = fetch_request_options(request,method)
           url = fetch_url(request)
           begin
-            http_response = fetch_response(url,method,opts)                  
-            response.status = http_response.response_header.status.to_i
-            if response.status == 0
-              if retries <= status_0_retries.to_i
-                process_request(request, response, (retries + 1))
+            http_response = fetch_response(url,method,opts,&read_block) 
+               response.status = http_response.response_header.status.to_i
+              if response.status == 0
+                if retries <= status_0_retries.to_i
+                  process_request(request,response,(retries + 1),&read_block)
+                else
+                  response.network_error = true  
+                end
               else
-                response.network_error = true  
-              end
-            else
-              response.headers = fetch_response_headers(http_response)
-              if (block_given? && response.status < 300)
-                response.stream(&read_block)
-              else
+                response.headers = fetch_response_headers(http_response)
                 response.body = http_response.response
               end
-            end
           rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
             response.network_error = true  
           end

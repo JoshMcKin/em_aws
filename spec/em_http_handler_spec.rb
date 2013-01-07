@@ -66,7 +66,7 @@ module AWS::Core
             handler.stub(:fetch_response).
               and_raise(Errno::ETIMEDOUT)
             handler.handle(req, resp)
-            resp.network_error.should be_true
+            resp.network_error?.should be_true
           end
         end
 
@@ -86,7 +86,17 @@ module AWS::Core
           end         
         end 
       end
-      
+      describe '#process_request' do
+        context 'too many retries' do
+          it "should have network error" do
+            EM.synchrony do
+              handler.send(:process_request,(req),(resp),3)
+              resp.network_error?.should be_true
+              EM.stop
+            end
+          end
+        end
+      end
       describe '#fetch_proxy' do
         context ':proxy_uri' do
           it 'passes proxy address and port from the request' do
