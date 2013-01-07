@@ -48,6 +48,15 @@ are created lazy, so pools grow until they meet the set pool size.
         :proxy => {:host => "http://myproxy.com",:port => 80})
     )
 
+## Streaming
+
+    EM.synchrony do
+      s3 = AWS::S3.new 
+      file = File.open("path_to_file")
+      s3.buckets['bucket_name'].objects["foo.txt"].write(file)
+      EM.stop
+    end
+
 ## Asynchronous Requests
 Requests can be set to perform asynchronously, returning nil initially and performing
 the actions in the background. If the request option :async are set to true that only
@@ -56,11 +65,11 @@ be handled asynchronously.
 
     EM.synchrony do
       s3 = AWS::S3.new
-      s3.buckets['bucket-name'].objects["foo"].write('test', :async => true) => nil
-      EM::Synchrony.sleep(2)
-      s3.buckets['bucket-name'].objects["foo"].read => # 'test'
-      s3.buckets['bucket-name'].objects["foo"].delete(:async => true) => nil
-      EM::Synchrony.sleep(2)
+      s3.buckets['bucket-name'].objects["foo"].write('test', :async => true) # => nil
+      EM::Synchrony.sleep(2) # Let the pending fibers run
+      s3.buckets['bucket-name'].objects["foo"].read # => # 'test'
+      s3.buckets['bucket-name'].objects["foo"].delete(:async => true) # => nil
+      EM::Synchrony.sleep(2) # Let the pending fibers run
       EM.stop
     end
 
