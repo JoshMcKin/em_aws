@@ -48,7 +48,7 @@ are created lazy, so pools grow until they meet the set pool size.
         :proxy => {:host => "http://myproxy.com",:port => 80})
     )
 
-## Streaming
+## [Streaming](http://aws.amazon.com/releasenotes/Ruby/5728376747252106)
 
     EM.synchrony do
       s3 = AWS::S3.new 
