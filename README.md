@@ -49,7 +49,7 @@ are created lazy, so pools grow until they meet the set pool size.
     )
 
 ## Streaming
-Requires [AWS-SKD-Ruby >= 1.6.3] (http://aws.amazon.com/releasenotes/Ruby/5728376747252106)
+Requires [AWS-SKD-Ruby >= 1.6.3](http://aws.amazon.com/releasenotes/Ruby/5728376747252106)
 
     EM.synchrony do
       s3 = AWS::S3.new 
