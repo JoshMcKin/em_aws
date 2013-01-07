@@ -60,9 +60,9 @@ Requires [AWS-SKD-Ruby >= 1.6.3](http://aws.amazon.com/releasenotes/Ruby/5728376
 
 ## Asynchronous Requests
 Requests can be set to perform asynchronously, returning nil initially and performing
-the actions in the background. If the request option :async are set to true that only
-that request request will handled asynchronously. If the client option :async all requests will 
-be handled asynchronously.
+the actions in the background. If the request option :async are set to true, only
+that request will be handled asynchronously. If the client option :async is set to true,
+all requests will be handled asynchronously.
 
     EM.synchrony do
       s3 = AWS::S3.new
