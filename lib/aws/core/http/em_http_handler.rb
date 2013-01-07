@@ -19,7 +19,8 @@ module AWS
       #   :http_handler => AWS::Http::EMHttpHandler.new(
       #   :proxy => {:host => "http://myproxy.com",
       #   :port => 80,
-      #   :pool_size => 20 # not set by default which disables connection pooling
+      #   :pool_size => 20, # not set by default which disables connection pooling
+      #   :async => false # if set to true all requests are handle asynchronously and initially return nil
       #   }))
       class EMHttpHandler
         
@@ -47,6 +48,29 @@ module AWS
           else
             EM.synchrony do
               process_request(request,response,&read_block)
+              EM.stop
+            end
+          end
+        end
+        
+        # If the request option :async are set to true that request will  handled 
+        # asynchronously returning nil initially and processing in the background 
+        # managed by EM-Synchrony. If the client option :async all requests will 
+        # be handled asynchronously.
+        # EX:
+        #     EM.synchrony do
+        #       s3 = AWS::S3.new
+        #       s3.obj.write('test', :async => true) => nil
+        #       EM::Synchrony.sleep(2)
+        #       s3.obj.read => # 'test'
+        #       EM.stop
+        #     end
+        def handle_async(request,response,handle,&read_block)
+          if EM::reactor_running? 
+            process_request(request,response,true,&read_block)    
+          else
+            EM.synchrony do
+              process_request(request,response,true,&read_block)
               EM.stop
             end
           end
@@ -107,12 +131,12 @@ module AWS
             @pool.run(url) do |connection|
               req = connection.send(method, {:keepalive => true}.merge(opts))
               req.stream &read_block if block_given?
-              return  EM::Synchrony.sync req
+              return  EM::Synchrony.sync req unless opts[:async]
             end
           else
             req = EM::HttpRequest.new(url).send(method,opts)
             req.stream &read_block if block_given?
-            return  EM::Synchrony.sync req
+            return  EM::Synchrony.sync req unless opts[:async]
           end
           nil
         end
@@ -137,12 +161,14 @@ module AWS
         # returns a status of 0 with nil for header and body, in such situations
         # we retry as many times as status_0_retries is set. If our retries exceed
         # status_0_retries we assume there is a network error
-        def process_request(request,response,retries=0,&read_block)      
+        def process_request(request,response,async=false,retries=0,&read_block)      
           method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
           opts = fetch_request_options(request,method)
+          opts[:async] = (async || opts[:async])
           url = fetch_url(request)
           begin
             http_response = fetch_response(url,method,opts,&read_block) 
+            unless opts[:async]
                response.status = http_response.response_header.status.to_i
               if response.status == 0
                 if retries <= status_0_retries.to_i
@@ -154,6 +180,7 @@ module AWS
                 response.headers = fetch_response_headers(http_response)
                 response.body = http_response.response
               end
+            end
           rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
             response.network_error = true  
           end

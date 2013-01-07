@@ -26,6 +26,8 @@ In your environments files add:
     AWS.config(
       :http_handler => AWS::Http::EMHttpHandler.new(
       :proxy => {:host => "http://myproxy.com", :port => 80}))
+      :pool_size => 0 # by default connection pooling is off
+      :async => false # if set to true all requests for this client will be asynchronous
 
 Your done. 
 
@@ -45,6 +47,22 @@ are created lazy, so pools grow until they meet the set pool size.
         :never_block => true, # if we run out of connections, create a new one
         :proxy => {:host => "http://myproxy.com",:port => 80})
     )
+
+## Asynchronous Requests
+Requests can be set to perform asynchronously, returning nil initially and performing
+the actions in the background. If the request option :async are set to true that only
+that request request will handled asynchronously. If the client option :async all requests will 
+be handled asynchronously.
+
+    EM.synchrony do
+      s3 = AWS::S3.new
+      s3.buckets['bucket-name'].objects["foo"].write('test', :async => true) => nil
+      EM::Synchrony.sleep(2)
+      s3.buckets['bucket-name'].objects["foo"].read => # 'test'
+      s3.buckets['bucket-name'].objects["foo"].delete(:async => true) => nil
+      EM::Synchrony.sleep(2)
+      EM.stop
+    end
 
 ## References
 
