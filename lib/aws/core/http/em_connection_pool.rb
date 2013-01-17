@@ -8,9 +8,7 @@ module AWS
       class EMConnectionPool
         # Since AWS connections may be to any number of urls, the connection
         # pool is a hash of connection arrays, instead of a simple array like
-        # most connection pools
-        # Stores data concerning pools, like current size, last fetched
-        # 
+        # most connection pools        # 
         # Options:
         # * :pool_size - number of connections for each pool
         # * :inactivity_timeout - number of seconds to wait before disconnecting, 
@@ -27,11 +25,12 @@ module AWS
           @pool_size = (options[:pool_size] || 5)
           @never_block = (options[:never_block])
           @inactivity_timeout = (options[:inactivity_timeout].to_i)
+          @connect_timeout = options[:connect_timeout]
           @pool_timeout = (options[:pool_timeout] || 0.5) 
           @fibered_mutex = EM::Synchrony::Thread::Mutex.new  # A fiber safe mutex
         end
        
-        # Run the block on the retrieved connection, then return the connection
+        # Run the block on the retrieved connection. Then return the connection
         # back to the pool.
         def run(url, &block)
           connection = santize_connection(fetch_connection(url))
@@ -64,6 +63,8 @@ module AWS
         end
         
         def new_connection(url)
+          opts = {:inactivity_timeout => @inactivity_timeout}
+          opts[:connect_timeout] = @connect_timeout if @connect_timeout
           EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
         end
         

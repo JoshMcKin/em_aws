@@ -10,7 +10,7 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
 ## Rails 3 setup (no rails 2 sorry)
 Setup [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
 
-Assuming you've already setup async-rails, add em_aws to you gemfile:
+Assuming you've already setup async-rails, add em_aws to your gemfile:
     
     gem 'em_aws'
 
