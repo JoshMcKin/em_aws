@@ -65,7 +65,7 @@ module AWS
         def new_connection(url)
           opts = {:inactivity_timeout => @inactivity_timeout}
           opts[:connect_timeout] = @connect_timeout if @connect_timeout
-          EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
+          EM::HttpRequest.new(url, opts)
         end
         
         # Make sure we have a good connection.
