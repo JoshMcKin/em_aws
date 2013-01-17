@@ -90,7 +90,8 @@ module AWS::Core
         context 'too many retries' do
           it "should have network error" do
             EM.synchrony do
-              handler.send(:process_request,(req),(resp),3)
+              resp.stub(:status).and_return(0)
+              handler.send(:process_request,(req),(resp),false,3)
               resp.network_error?.should be_true
               EM.stop
             end

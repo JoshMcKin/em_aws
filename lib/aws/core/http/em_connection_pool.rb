@@ -28,19 +28,22 @@ module AWS
           @never_block = (options[:never_block])
           @inactivity_timeout = (options[:inactivity_timeout].to_i)
           @pool_timeout = (options[:pool_timeout] || 0.5) 
+          @fibered_mutex = EM::Synchrony::Thread::Mutex.new  # A fiber safe mutex
         end
-        
-        # A fiber safe mutex
-        def _fiber_mutex
-          @fibered_mutex ||= EM::Synchrony::Thread::Mutex.new
+       
+        # Run the block on the retrieved connection, then return the connection
+        # back to the pool.
+        def run(url, &block)
+          connection = santize_connection(fetch_connection(url))
+          block.call(connection)
+        ensure
+          return_connection(url,connection) 
         end
         
         # Returns a pool for the associated url
         def available_pools(url)
-          _fiber_mutex.synchronize do
-            add_connection(url) if add_connection?(url)
-            @pools[url]
-          end
+          add_connection(url) if add_connection?(url)
+          @pools[url]
         end
         
         def add_connection?(url)
@@ -64,35 +67,6 @@ module AWS
           EM::HttpRequest.new(url, :inactivity_timeout => @inactivity_timeout)
         end
         
-        # Run the block on the retrieved connection, then return the connection
-        # back to the pool.
-        def run(url, &block)
-          connection = santize_connection(fetch_connection(url))
-          block.call(connection)
-        ensure
-          return_connection(url,connection) 
-        end
-        
-        # Fetch an available connection or raise an error
-        def fetch_connection(url)         
-          connection = nil
-          alarm = (Time.now + @pool_timeout)       
-          # block until we get an available connection or Timeout::Error     
-          while connection.nil?
-            if alarm <= Time.now
-              message = "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws or setting :never_block to true."
-              AWS.config.logger.error message
-              raise Timeout::Error, message
-            end
-            connection = available_pools(url).shift
-            if connection.nil? && (@never_block)
-              AWS.config.logger.info "Adding AWS connection to #{url} for never_block, will not be returned to pool."
-              connection = new_connection(url)
-            end
-          end
-          connection    
-        end
-        
         # Make sure we have a good connection.
         def santize_connection(connection)
           if connection.conn && connection.conn.error?
@@ -103,13 +77,35 @@ module AWS
           connection
         end
         
+        # Fetch an available connection or raise an error
+        def fetch_connection(url)         
+          alarm = (Time.now + @pool_timeout)       
+          # block until we get an available connection or Timeout::Error   
+          @fibered_mutex.synchronize do
+            loop do
+              if alarm <= Time.now
+                message = "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws or setting :never_block to true."
+                AWS.config.logger.error message
+                raise Timeout::Error, message
+              end
+              connection = available_pools(url).shift
+              if connection.nil? && (@never_block)
+                AWS.config.logger.info "Adding AWS connection to #{url} for never_block, will not be returned to pool."
+                connection = new_connection(url)
+              end
+              return connection if connection
+            end
+          end
+        end
+        
         # Return connections to pool if allowed, otherwise closes connection
+        # We return connections to the front of the pool to keep them active.
         def return_connection(url,connection)
-          _fiber_mutex.synchronize do
+          @fibered_mutex.synchronize do
             if (@pools[url].nil? || (@pools[url].length == @pool_size))
               connection.conn.close_connection if connection.conn
             else
-              @pools[url] << connection 
+              @pools[url].insert(0,connection)
             end
             @pools[url]
           end
