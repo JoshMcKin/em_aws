@@ -99,20 +99,20 @@ module AWS
         end
         
         # Fetch an available connection
+        # We pop the last connection increase our chances of getting a live connection
         def fetch_connection(url)         
           @fibered_mutex.synchronize do
-            available_pools(url).shift
+            available_pools(url).pop
           end
         end
         
-        # Return connections to pool if allowed, otherwise closes connection
-        # We return connections to the front of the pool to keep them active.
+        # If allowed, returns connections to pool end of pool; otherwise closes connection
         def return_connection(url,connection)
           @fibered_mutex.synchronize do
             if (@pools[url].nil? || (@pools[url].length == @pool_size))
               connection.conn.close_connection if connection.conn
             else
-              @pools[url].insert(0,connection)
+              @pools[url] << connection
             end
             @pools[url]
           end
