@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    em_aws (0.2.0)
+    em_aws (0.2.1)
       aws-sdk
       em-http-request
       em-synchrony
@@ -29,18 +29,14 @@ GEM
     em-synchrony (1.0.2)
       eventmachine (>= 1.0.0.beta.1)
     eventmachine (1.0.0)
-    eventmachine (1.0.0-java)
     http_parser.rb (0.5.3)
-    http_parser.rb (0.5.3-java)
     httparty (0.10.0)
       multi_json (~> 1.0)
       multi_xml
     json (1.7.6)
-    json (1.7.6-java)
     multi_json (1.5.0)
     multi_xml (0.5.2)
     nokogiri (1.5.6)
-    nokogiri (1.5.6-java)
     rspec (2.12.0)
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)

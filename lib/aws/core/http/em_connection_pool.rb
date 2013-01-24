@@ -33,7 +33,7 @@ module AWS
         # Run the block on the retrieved connection. Then return the connection
         # back to the pool.
         def run(url, &block)
-          connection = santize_connection(fetch_connection(url))
+          connection = santize_connection(connection(url))
           block.call(connection)
         ensure
           return_connection(url,connection) 
@@ -77,25 +77,30 @@ module AWS
           end
           connection
         end
-        
+              
         # Fetch an available connection or raise an error
-        def fetch_connection(url)         
+        def connection(url)         
           alarm = (Time.now + @pool_timeout)       
           # block until we get an available connection or Timeout::Error   
-          @fibered_mutex.synchronize do
-            loop do
-              if alarm <= Time.now
-                message = "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws or setting :never_block to true."
-                AWS.config.logger.error message
-                raise Timeout::Error, message
-              end
-              connection = available_pools(url).shift
-              if connection.nil? && (@never_block)
-                AWS.config.logger.info "Adding AWS connection to #{url} for never_block, will not be returned to pool."
-                connection = new_connection(url)
-              end
-              return connection if connection
+          loop do
+            if alarm <= Time.now
+              message = "Could not fetch a free connection in time. Consider increasing your connection pool for em_aws or setting :never_block to true."
+              AWS.config.logger.error message
+              raise Timeout::Error, message
             end
+            connection = fetch_connection(url)
+            if connection.nil? && (@never_block)
+              AWS.config.logger.info "Adding AWS connection to #{url} for never_block, will not be returned to pool."
+              connection = new_connection(url)
+            end
+            return connection if connection
+          end
+        end
+        
+        # Fetch an available connection
+        def fetch_connection(url)         
+          @fibered_mutex.synchronize do
+            available_pools(url).shift
           end
         end
         
