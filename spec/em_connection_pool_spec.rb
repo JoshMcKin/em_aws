@@ -28,24 +28,24 @@ module AWS
         
         describe '#add_connection?' do
           it "should be true if @pool_data does not have data for the url"do
-            @em_connection_pool.add_connection?("http://www.testurl123.com/").should be_true 
+            @em_connection_pool.send(:add_connection?,"http://www.testurl123.com/").should be_true 
           end
       
           it "should be true if @pool_data has data but the number of connnections has not reached the pool_size" do
             @em_connection_pool.instance_variable_set(:@pools,{"http://www.testurl123.com/" => ["connection"]})
-            @em_connection_pool.add_connection?("http://www.testurl123.com/").should be_true 
+            @em_connection_pool.send(:add_connection?,"http://www.testurl123.com/").should be_true 
           end
           
           it "should be false pool has reached pool_size" do
             @em_connection_pool.instance_variable_set(:@pools,
               {"http://www.testurl123.com/" => ["connection","connection","connection","connection","connection"]})
-            @em_connection_pool.add_connection?("http://www.testurl123.com/").should be_true 
+            @em_connection_pool.send(:add_connection?,"http://www.testurl123.com/").should be_true 
           end
         end
         
         describe '#add_connection' do
           it "should add connections for supplied url"do
-            @em_connection_pool.add_connection("http://www.testurl123.com/") 
+            @em_connection_pool.send(:add_connection,"http://www.testurl123.com/") 
             @em_connection_pool.instance_variable_get(:@pools)["http://www.testurl123.com/"].should_not be_nil
           end
         end   
@@ -54,7 +54,7 @@ module AWS
           it "should raise Timeout::Error if an available is not found in time"do
             @em_connection_pool.stub(:available_pools).and_return([])
             @em_connection_pool.instance_variable_set(:@never_block, false)
-            lambda { @em_connection_pool.connection('http://some_url.com')}.should raise_error(Timeout::Error)
+            lambda { @em_connection_pool.send(:connection,'http://some_url.com')}.should raise_error(Timeout::Error)
           end
         end
 

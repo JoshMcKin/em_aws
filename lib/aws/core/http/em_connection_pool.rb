@@ -39,6 +39,7 @@ module AWS
           return_connection(url,connection) 
         end
         
+        private
         # Returns a pool for the associated url
         def available_pools(url)
           add_connection(url) if add_connection?(url)
