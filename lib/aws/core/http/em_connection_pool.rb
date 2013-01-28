@@ -33,6 +33,7 @@ module AWS
         # Run the block on the retrieved connection. Then return the connection
         # back to the pool.
         def run(url, &block)
+          url = url.to_s.split("?")[0].to_s.gsub(/\/$/, "") # homogenize
           connection = santize_connection(connection(url))
           block.call(connection)
         ensure
