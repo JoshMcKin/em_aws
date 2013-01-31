@@ -24,6 +24,13 @@ module AWS
       #   }))
       class EMHttpHandler
         
+        EM_PASS_THROUGH_ERRORS = [
+          NoMethodError, FloatDomainError, TypeError, NotImplementedError,
+          SystemExit, Interrupt, SyntaxError, RangeError, NoMemoryError,
+          ArgumentError, ZeroDivisionError, LoadError, NameError,
+          LocalJumpError, SignalException, ScriptError,
+          SystemStackError, RegexpError, IndexError,
+        ]
         # @return [Hash] The default options to send to EM-Synchrony on each request.
         attr_reader :default_request_options
         attr_accessor :status_0_retries  
@@ -169,7 +176,7 @@ module AWS
           begin
             http_response = fetch_response(url,method,opts,&read_block) 
             unless opts[:async]
-               response.status = http_response.response_header.status.to_i
+              response.status = http_response.response_header.status.to_i
               if response.status == 0
                 if retries <= status_0_retries.to_i
                   process_request(request,response,(retries + 1),&read_block)
@@ -181,9 +188,14 @@ module AWS
                 response.body = http_response.response
               end
             end
-          rescue *AWS::Core::Http::NetHttpHandler::NETWORK_ERRORS
-            response.network_error = true  
+          rescue Timeout::Error => error
+            response.network_error = error
+          rescue *EM_PASS_THROUGH_ERRORS => error
+            raise error
+          rescue Exception => error
+            response.network_error = error
           end
+          nil
         end
       end
     end
