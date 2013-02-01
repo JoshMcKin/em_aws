@@ -23,6 +23,7 @@ module AWS::Core
       let(:req) do
         r = Http::Request.new
         r.host = "foo.bar.com"
+        r.uri = "/my_path/?foo=bar"
         r
       end
 
@@ -103,6 +104,10 @@ module AWS::Core
           opts = handler.send(:fetch_request_options,(req))
           opts[:body].should eql(req.querystring)
           opts[:query].should eql(req.querystring)
+        end
+        it "should set :path to request.path" do
+          opts = handler.send(:fetch_request_options,(req))
+          opts[:path].should eql(req.path)
         end
       end
       describe '#fetch_proxy' do

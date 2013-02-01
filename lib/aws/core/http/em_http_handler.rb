@@ -126,6 +126,7 @@ module AWS
               merge(fetch_proxy(request)).
               merge(fetch_ssl(request)))  
           opts[:query] = opts[:body] = request.querystring
+          opts[:path] = request.path if request.path
           opts
         end
         
