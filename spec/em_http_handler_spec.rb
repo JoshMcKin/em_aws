@@ -14,6 +14,11 @@
 require 'spec_helper'
 module AWS::Core
   module Http
+    class EMFooIO
+      def path
+        "/my_path/test.text"
+      end
+    end
     describe EMHttpHandler do
     
       let(:handler) { EMHttpHandler.new(default_request_options) }
@@ -24,6 +29,7 @@ module AWS::Core
         r = Http::Request.new
         r.host = "foo.bar.com"
         r.uri = "/my_path/?foo=bar"
+        r.body_stream = StringIO.new("myStringIO")
         r
       end
 
@@ -100,14 +106,29 @@ module AWS::Core
         end
       end
       describe '#fetch_request_options' do
+        
         it "should set :query and :body to request.querystring" do
           opts = handler.send(:fetch_request_options,(req))
-          opts[:body].should eql(req.querystring)
           opts[:query].should eql(req.querystring)
         end
+        
         it "should set :path to request.path" do
           opts = handler.send(:fetch_request_options,(req))
           opts[:path].should eql(req.path)
+        end  
+        context "request.body_stream is a StringIO" do
+          it "should set :body to request.body_stream" do
+            opts = handler.send(:fetch_request_options,(req))
+            opts[:body].should eql("myStringIO")
+          end
+        end
+        context "request.body_stream is an object that responds to :path" do
+          it "should set :file to object.path " do
+            my_io = EMFooIO.new
+            req.stub(:body_stream).and_return(my_io)
+            opts = handler.send(:fetch_request_options,(req))
+            opts[:file].should eql(my_io.path)
+          end
         end
       end
       describe '#fetch_proxy' do

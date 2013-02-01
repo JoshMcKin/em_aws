@@ -124,8 +124,13 @@ module AWS
           opts = default_request_options.
             merge(fetch_headers(request).
               merge(fetch_proxy(request)).
-              merge(fetch_ssl(request)))  
-          opts[:query] = opts[:body] = request.querystring
+              merge(fetch_ssl(request))) 
+          opts[:query] = request.querystring
+          if request.body_stream.respond_to?(:path)
+            opts[:file] = request.body_stream.path
+          else
+            opts[:body] = request.body.to_s
+          end
           opts[:path] = request.path if request.path
           opts
         end

@@ -50,11 +50,22 @@ are created lazy, so pools grow until they meet the set pool size.
 
 ## Streaming
 Requires [AWS-SKD-Ruby >= 1.6.3](http://aws.amazon.com/releasenotes/Ruby/5728376747252106)
-
+    
+    # Stream from disk
+    # You can pass an IO object in the :data option instead but the object must 
+    # respond to :path. We cannot stream from memory at this time.
     EM.synchrony do
       s3 = AWS::S3.new 
-      file = File.open("path_to_file")
-      s3.buckets['bucket_name'].objects["foo.txt"].write(file)
+      s3.buckets['bucket_name'].objects["foo.txt"].write(:file => "path_to_file")
+      EM.stop
+    end
+
+    # Stream from AWS
+    EM.synchrony do
+      s3 = AWS::S3.new 
+      s3.buckets['bucket_name'].objects["foo.txt"].read do |chuck|
+        puts chuck
+      end
       EM.stop
     end
 
