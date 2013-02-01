@@ -84,7 +84,7 @@ module AWS::Core
             #puts handler.default_request_options
             handler.default_request_options[:private_key_file].should == "blarg"
           end         
-        end 
+        end   
       end
       describe '#process_request' do
         context 'too many retries' do
@@ -96,6 +96,13 @@ module AWS::Core
               EM.stop
             end
           end
+        end
+      end
+      describe '#fetch_request_options' do
+        it "should set :query and :body to request.querystring" do
+          opts = handler.send(:fetch_request_options,(req))
+          opts[:body].should eql(req.querystring)
+          opts[:query].should eql(req.querystring)
         end
       end
       describe '#fetch_proxy' do

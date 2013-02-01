@@ -57,17 +57,6 @@ module AWS
             lambda { @em_connection_pool.send(:connection,'http://some_url.com')}.should raise_error(Timeout::Error)
           end
         end
-        
-        describe '#run' do
-          it "should homogenize url as much as possible by remove params and trailing '/'" do
-            url = "http://www.testurl123.com/?foo=bar"
-            @em_connection_pool.run(url) do {
-                #stuff
-              }
-            end
-            @em_connection_pool.instance_variable_get(:@pools)["http://www.testurl123.com"].should_not be_nil
-          end
-        end
 
         context 'integration test with parallel requests' do
           # 10 parallel requests

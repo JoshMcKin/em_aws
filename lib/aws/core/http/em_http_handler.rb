@@ -88,9 +88,9 @@ module AWS
         def fetch_url(request)
           url = nil
           if request.use_ssl?
-            url = "https://#{request.host}:443#{request.uri}"
+            url = "https://#{request.host}:443"
           else
-            url = "http://#{request.host}#{request.uri}"
+            url = "http://#{request.host}"
           end
           url
         end
@@ -120,16 +120,12 @@ module AWS
           opts
         end
         
-        def fetch_request_options(request,method)
+        def fetch_request_options(request)
           opts = default_request_options.
             merge(fetch_headers(request).
               merge(fetch_proxy(request)).
               merge(fetch_ssl(request)))  
-          if (method == :get)
-            opts[:query] = request.body
-          else
-            opts[:body] = request.body
-          end
+          opts[:query] = opts[:body] = request.querystring
           opts
         end
         
@@ -147,7 +143,7 @@ module AWS
           end
           nil
         end
-        
+            
         # AWS needs all headers downcased, and for some reason x-amz-expiration and
         # x-amz-restore need to be arrays
         def fetch_response_headers(response)
@@ -170,7 +166,7 @@ module AWS
         # status_0_retries we assume there is a network error
         def process_request(request,response,async=false,retries=0,&read_block)      
           method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
-          opts = fetch_request_options(request,method)
+          opts = fetch_request_options(request)
           opts[:async] = (async || opts[:async])
           url = fetch_url(request)
           begin
