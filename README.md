@@ -63,8 +63,8 @@ Requires [AWS-SKD-Ruby >= 1.6.3](http://aws.amazon.com/releasenotes/Ruby/5728376
     # Stream from AWS
     EM.synchrony do
       s3 = AWS::S3.new 
-      s3.buckets['bucket_name'].objects["foo.txt"].read do |chuck|
-        puts chuck
+      s3.buckets['bucket_name'].objects["foo.txt"].read do |chunk|
+        puts chunk
       end
       EM.stop
     end
