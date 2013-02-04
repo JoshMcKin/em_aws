@@ -150,17 +150,17 @@ module AWS
           nil
         end
             
-        # AWS needs all headers downcased, and for some reason x-amz-expiration and
-        # x-amz-restore need to be arrays
+        # AWS needs all header keys downcased and values need to be arrays
         def fetch_response_headers(response)
           response_headers = response.response_header.raw.to_hash
           aws_headers = {}
           response_headers.each_pair do  |k,v|
             key = k.downcase
-            if (key == "x-amz-expiration" || key == 'x-amz-restore')
-              aws_headers[key] = [v]
-            else
+            #['x-amz-crc32', 'x-amz-expiration','x-amz-restore','x-amzn-errortype']
+            if v.is_a?(Array)
               aws_headers[key] = v
+            else
+              aws_headers[key] = [v]
             end
           end
           response_headers.merge(aws_headers)
