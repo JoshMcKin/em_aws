@@ -86,13 +86,7 @@ module AWS
         private
         
         def fetch_url(request)
-          url = nil
-          if request.use_ssl?
-            url = "https://#{request.host}:443"
-          else
-            url = "http://#{request.host}"
-          end
-          url
+          "#{(request.use_ssl? ? "https" : "http")}://#{request.host}:#{request.port}"
         end
                    
         def fetch_headers(request)
