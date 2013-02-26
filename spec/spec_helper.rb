@@ -5,8 +5,7 @@ require 'aws/core/http/em_http_handler'
 require 'rspec'
 require 'bundler/setup'
 require 'logger'
-
-
+require 'em-http'
 
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
@@ -17,8 +16,6 @@ class StubLogger
   end
 end
 AWS.config(:logger => StubLogger.new)
+
 RSpec.configure do |config|
-
-
 end
-

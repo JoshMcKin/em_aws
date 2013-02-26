@@ -12,6 +12,8 @@
 # language governing permissions and limitations under the License.
 
 require 'spec_helper'
+require 'eventmachine'
+require 'evma_httpserver'
 module AWS::Core
   module Http
     class EMFooIO
@@ -19,8 +21,25 @@ module AWS::Core
         "/my_path/test.text"
       end
     end
+
+    # A slow server for testing timeout, 
+    # borrowed from: http://www.igvita.com/2008/05/27/ruby-eventmachine-the-speed-demon/
+    class SlowServer < EventMachine::Connection
+      include EventMachine::HttpServer
+
+      def process_http_request
+        resp = EventMachine::DelegatedHttpResponse.new( self )
+
+        sleep 2 # Simulate a long running request
+
+        resp.status = 200
+        resp.content = "Hello World!"
+        resp.send_response
+      end
+    end
+
     describe EMHttpHandler do
-    
+
       let(:handler) { EMHttpHandler.new(default_request_options) }
 
       let(:default_request_options) { {} }
@@ -40,16 +59,16 @@ module AWS::Core
         EMHttpHandler.should_receive(:fetch_response).with do |url, method,opts|
           options = opts
           double("http response",
-            :response => "<foo/>",
-            :code => 200,
-            :to_hash => {})
+                 :response => "<foo/>",
+                 :code => 200,
+                 :to_hash => {})
         end
         handler.handle(req, resp)
         options
       end
-        
+
       it 'should be accessible from AWS as well as AWS::Core' do
-        AWS::Http::EMHttpHandler.new.should 
+        AWS::Http::EMHttpHandler.new.should
         be_an(AWS::Core::Http::EMHttpHandler)
       end
 
@@ -80,7 +99,7 @@ module AWS::Core
         context 'default request options' do
           before(:each) do
             handler.stub(:default_request_options).and_return({ :foo => "BAR",
-                :private_key_file => "blarg" })
+                                                                :private_key_file => "blarg" })
           end
 
           it 'passes extra options through to synchrony' do
@@ -90,32 +109,20 @@ module AWS::Core
           it 'uses the default when the request option is not set' do
             #puts handler.default_request_options
             handler.default_request_options[:private_key_file].should == "blarg"
-          end         
-        end   
-      end
-      describe '#process_request' do
-        context 'too many retries' do
-          it "should have network error" do
-            EM.synchrony do
-              resp.stub(:status).and_return(0)
-              handler.send(:process_request,(req),(resp),false,3)
-              resp.network_error?.should be_true
-              EM.stop
-            end
           end
         end
       end
+
       describe '#fetch_request_options' do
-        
         it "should set :query and :body to request.querystring" do
           opts = handler.send(:fetch_request_options,(req))
           opts[:query].should eql(req.querystring)
         end
-        
+
         it "should set :path to request.path" do
           opts = handler.send(:fetch_request_options,(req))
           opts[:path].should eql(req.path)
-        end  
+        end
         context "request.body_stream is a StringIO" do
           it "should set :body to request.body_stream" do
             opts = handler.send(:fetch_request_options,(req))
@@ -139,7 +146,7 @@ module AWS::Core
             handler.send(:fetch_proxy,(req))[:proxy][:port].should == 443
           end
         end
-        
+
         describe '#fetch_ssl' do
           it 'prefers the request option when set' do
             req.use_ssl = true
@@ -148,7 +155,7 @@ module AWS::Core
             handler.send(:fetch_ssl,(req))[:private_key_file].should == "something"
             handler.send(:fetch_ssl,(req))[:cert_chain_file].should == "something"
           end
-           
+
           context 'CA cert path' do
             context 'use_ssl? is true' do
 
@@ -164,7 +171,7 @@ module AWS::Core
                 it 'should use the ssl_ca_file attribute of the request' do
                   handler.send(:fetch_ssl,(req))[:private_key_file].should == "foobar.txt"
                 end
-                  
+
                 it 'should use the ssl_ca_file attribute of the request' do
                   handler.send(:fetch_ssl,(req))[:cert_chain_file].should == "foobar.txt"
                 end
@@ -179,8 +186,47 @@ module AWS::Core
               handler.send(:fetch_ssl,(req)).should_not include(:private_key_file)
             end
           end
-        end      
-      end    
+        end
+      end
+
+      it "should not timeout" do
+        EM.synchrony {
+          response = Http::Response.new
+          request = Http::Request.new
+          request.host = "127.0.0.1"
+          request.port = "8081"
+          request.uri = "/"
+          request.body_stream = StringIO.new("myStringIO")
+          # turn on our test server
+          EventMachine::run {
+            EventMachine::start_server request.host, request.port, SlowServer
+          }
+          handler.stub(:fetch_url).and_return("http://127.0.0.1:8081")
+          handler.handle(request,response)
+          response.network_error.should be_nil
+          EM.stop
+        }
+      end
+      it "should timeout after 0.1 seconds" do
+        EM.synchrony {
+          response = Http::Response.new
+          request = Http::Request.new
+          request.host = "127.0.0.1"
+          request.port = "8081"
+          request.uri = "/"
+          request.body_stream = StringIO.new("myStringIO")
+          # turn on our test server
+          EventMachine::run {
+            EventMachine::start_server request.host, request.port, SlowServer
+          }
+          handler.stub(:fetch_url).and_return("http://127.0.0.1:8081")
+          request.stub(:read_timeout).and_return(0.01)
+          handler.stub(:connect_timeout).and_return(1) #just to speed up the test
+          handler.handle(request,response)
+          response.network_error.should be_a(Timeout::Error)
+          EM.stop
+        }
+      end
     end
   end
 end
