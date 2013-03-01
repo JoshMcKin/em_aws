@@ -33,7 +33,6 @@ module AWS
         ]
         # @return [Hash] The default options to send to EM-Synchrony on each request.
         attr_reader :default_request_options
-        attr_accessor :status_0_retries  
         
         # Constructs a new HTTP handler using EM-Synchrony.
         # @param [Hash] options Default options to send to EM-Synchrony on
@@ -46,7 +45,6 @@ module AWS
         def initialize options = {}
           @default_request_options = options
           @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
-          @status_0_retries = 2 # set to 0 for no retries
         end 
     
         def handle(request,response,&read_block)
@@ -129,7 +127,9 @@ module AWS
           opts
         end
         
-        def fetch_response(url,method,opts={},&read_block)
+        def fetch_response(request,opts={},&read_block)
+          method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
+          url = fetch_url(request)
           if @pool
             @pool.run(url) do |connection|
               req = connection.send(method, {:keepalive => true}.merge(opts))
@@ -137,7 +137,8 @@ module AWS
               return  EM::Synchrony.sync req unless opts[:async]
             end
           else
-            req = EM::HttpRequest.new(url).send(method,opts)
+            req = EM::HttpRequest.new(url, 
+              :inactivity_timeout => request.read_timeout).send(method,opts)
             req.stream &read_block if block_given?
             return  EM::Synchrony.sync req unless opts[:async]
           end
@@ -161,28 +162,19 @@ module AWS
         end
         
         # Builds and attempts the request. Occasionally under load em-http-request
-        # returns a status of 0 with nil for header and body, in such situations
-        # we retry as many times as status_0_retries is set. If our retries exceed
-        # status_0_retries we assume there is a network error
-        def process_request(request,response,async=false,retries=0,&read_block)      
-          method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
+        # em-http-request returns a status of 0 for various http timeouts, see:
+        # https://github.com/igrigorik/em-http-request/issues/76
+        # https://github.com/eventmachine/eventmachine/issues/175
+        def process_request(request,response,async=false,&read_block)      
           opts = fetch_request_options(request)
           opts[:async] = (async || opts[:async])
-          url = fetch_url(request)
           begin
-            http_response = fetch_response(url,method,opts,&read_block) 
+            http_response = fetch_response(request,opts,&read_block) 
             unless opts[:async]
               response.status = http_response.response_header.status.to_i
-              if response.status == 0
-                if retries <= status_0_retries.to_i
-                  process_request(request,response,(retries + 1),&read_block)
-                else
-                  response.network_error = true  
-                end
-              else
-                response.headers = fetch_response_headers(http_response)
-                response.body = http_response.response
-              end
+              raise Timeout::Error if response.status == 0
+              response.headers = fetch_response_headers(http_response)
+              response.body = http_response.response
             end
           rescue Timeout::Error => error
             response.network_error = error
