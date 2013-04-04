@@ -4,6 +4,8 @@ EmAws Changelog
 HEAD
 =======
 
+- Use [hot_tub](https://github.com/JoshMcKin/hot_tub) for connection pooling and sessions
+
 0.2.5
 =======
 

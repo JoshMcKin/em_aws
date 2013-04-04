@@ -1,16 +1,17 @@
 # http://docs.amazonwebservices.com/AWSRubySDK/latest/
-require "em-synchrony"
-require "em-synchrony/em-http"
+require 'hot_tub'
+require 'em-synchrony'
+require 'em-synchrony/em-http'
 require 'em-synchrony/thread'
 module AWS
   module Core
     module Http
-      
+
       # An EM-Synchrony implementation for Fiber based asynchronous ruby application.
-      # See https://github.com/igrigorik/async-rails and 
+      # See https://github.com/igrigorik/async-rails and
       # http://www.mikeperham.com/2010/04/03/introducing-phat-an-asynchronous-rails-app/
       # for examples of Aync-Rails application
-      # 
+      #
       # In Rails add the following to you various environment files:
       #
       # require 'aws-sdk'
@@ -23,7 +24,7 @@ module AWS
       #   :async => false # if set to true all requests are handle asynchronously and initially return nil
       #   }))
       class EMHttpHandler
-        
+
         EM_PASS_THROUGH_ERRORS = [
           NoMethodError, FloatDomainError, TypeError, NotImplementedError,
           SystemExit, Interrupt, SyntaxError, RangeError, NoMemoryError,
@@ -33,7 +34,7 @@ module AWS
         ]
         # @return [Hash] The default options to send to EM-Synchrony on each request.
         attr_reader :default_request_options
-        
+
         # Constructs a new HTTP handler using EM-Synchrony.
         # @param [Hash] options Default options to send to EM-Synchrony on
         # each request. These options will be sent to +get+, +post+,
@@ -44,23 +45,35 @@ module AWS
         # {AWS::Configuration} instead.
         def initialize options = {}
           @default_request_options = options
-          @pool = EMConnectionPool.new(options) if options[:pool_size].to_i > 0
-        end 
-    
+          @client_options = {
+            :inactivity_timeout => (options[:inactivity_timeout] || 0),
+            :connect_timeout => (options[:connect_timeout] || 10)
+          }
+          @pool_options = {
+            :size => ((options[:pool_size].to_i || 5)),
+            :never_block => (options[:never_block].nil? ? true : options[:never_block]),
+            :blocking_timeout => (options[:pool_timeout] || 10)
+          }
+          if @pool_options[:size] > 0
+            @pool = HotTub::Session.new { |url| HotTub::Pool.new(@pool_options) {EM::HttpRequest.new(url,@client_options)}}
+          end
+        end
+
         def handle(request,response,&read_block)
-          if EM::reactor_running? 
-            process_request(request,response,&read_block)    
+          if EM::reactor_running?
+            process_request(request,response,&read_block)
           else
             EM.synchrony do
               process_request(request,response,&read_block)
+              @pool.close_all if @pool
               EM.stop
             end
           end
         end
-        
-        # If the request option :async are set to true that request will  handled 
-        # asynchronously returning nil initially and processing in the background 
-        # managed by EM-Synchrony. If the client option :async all requests will 
+
+        # If the request option :async are set to true that request will  handled
+        # asynchronously returning nil initially and processing in the background
+        # managed by EM-Synchrony. If the client option :async all requests will
         # be handled asynchronously.
         # EX:
         #     EM.synchrony do
@@ -71,22 +84,23 @@ module AWS
         #       EM.stop
         #     end
         def handle_async(request,response,handle,&read_block)
-          if EM::reactor_running? 
-            process_request(request,response,true,&read_block)    
+          if EM::reactor_running?
+            process_request(request,response,true,&read_block)
           else
             EM.synchrony do
               process_request(request,response,true,&read_block)
+              @pool.close_all if @pool
               EM.stop
             end
           end
         end
-        
+
         private
-        
+
         def fetch_url(request)
           "#{(request.use_ssl? ? "https" : "http")}://#{request.host}:#{request.port}"
         end
-                   
+
         def fetch_headers(request)
           headers = { 'content-type' => '' }
           request.headers.each_pair do |key,value|
@@ -94,30 +108,30 @@ module AWS
           end
           {:head => headers}
         end
-        
+
         def fetch_proxy(request)
           opts={}
-          if request.proxy_uri     
+          if request.proxy_uri
             opts[:proxy] = {:host => request.proxy_uri.host,:port => request.proxy_uri.port}
           end
           opts
         end
-          
+
         def fetch_ssl(request)
           opts = {}
           if request.use_ssl? && request.ssl_verify_peer?
-            opts[:private_key_file] = request.ssl_ca_file 
-            opts[:cert_chain_file]= request.ssl_ca_file 
+            opts[:private_key_file] = request.ssl_ca_file
+            opts[:cert_chain_file]= request.ssl_ca_file
           end
           opts
         end
-        
+
         def fetch_request_options(request)
           opts = default_request_options.
             merge(fetch_headers(request).
-              merge(fetch_proxy(request)).
-              merge(fetch_ssl(request))) 
-          opts[:query] = request.querystring
+                  merge(fetch_proxy(request)).
+                  merge(fetch_ssl(request)))
+            opts[:query] = request.querystring
           if request.body_stream.respond_to?(:path)
             opts[:file] = request.body_stream.path
           else
@@ -126,7 +140,7 @@ module AWS
           opts[:path] = request.path if request.path
           opts
         end
-        
+
         def fetch_response(request,opts={},&read_block)
           method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
           url = fetch_url(request)
@@ -137,14 +151,14 @@ module AWS
               return  EM::Synchrony.sync req unless opts[:async]
             end
           else
-            req = EM::HttpRequest.new(url, 
-              :inactivity_timeout => request.read_timeout).send(method,opts)
+            opts = @client_options.merge(:inactivity_timeout => request.read_timeout)
+            req = EM::HttpRequest.new(url,opts).send(method,opts)
             req.stream &read_block if block_given?
             return  EM::Synchrony.sync req unless opts[:async]
           end
           nil
         end
-            
+
         # AWS needs all header keys downcased and values need to be arrays
         def fetch_response_headers(response)
           response_headers = response.response_header.raw.to_hash
@@ -160,16 +174,16 @@ module AWS
           end
           response_headers.merge(aws_headers)
         end
-        
+
         # Builds and attempts the request. Occasionally under load em-http-request
         # em-http-request returns a status of 0 for various http timeouts, see:
         # https://github.com/igrigorik/em-http-request/issues/76
         # https://github.com/eventmachine/eventmachine/issues/175
-        def process_request(request,response,async=false,&read_block)      
+        def process_request(request,response,async=false,&read_block)
           opts = fetch_request_options(request)
           opts[:async] = (async || opts[:async])
           begin
-            http_response = fetch_response(request,opts,&read_block) 
+            http_response = fetch_response(request,opts,&read_block)
             unless opts[:async]
               response.status = http_response.response_header.status.to_i
               raise Timeout::Error if response.status == 0
