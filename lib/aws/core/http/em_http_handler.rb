@@ -50,12 +50,13 @@ module AWS
             :connect_timeout => (options[:connect_timeout] || 10)
           }
           @pool_options = {
+            :with_pool => true,
             :size => ((options[:pool_size].to_i || 5)),
             :never_block => (options[:never_block].nil? ? true : options[:never_block]),
             :blocking_timeout => (options[:pool_timeout] || 10)
           }
           if @pool_options[:size] > 0
-            @pool = HotTub::Session.new { |url| HotTub::Pool.new(@pool_options) {EM::HttpRequest.new(url,@client_options)}}
+            @pool = HotTub::Session.new(@pool_options) { |url| EM::HttpRequest.new(url,@client_options)}
           end
         end
 

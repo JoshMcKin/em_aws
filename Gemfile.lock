@@ -5,7 +5,7 @@ PATH
       aws-sdk
       em-http-request
       em-synchrony
-      hot_tub (~> 0.2.1)
+      hot_tub (~> 0.2.2)
 
 GEM
   remote: http://rubygems.org/
@@ -32,7 +32,7 @@ GEM
     eventmachine (1.0.3)
     eventmachine (1.0.3-java)
     eventmachine_httpserver (0.2.1)
-    hot_tub (0.2.1)
+    hot_tub (0.2.2)
     http_parser.rb (0.5.3)
     http_parser.rb (0.5.3-java)
     json (1.7.7)

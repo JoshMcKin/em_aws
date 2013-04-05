@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "aws-sdk"
   s.add_runtime_dependency "em-synchrony"
   s.add_runtime_dependency "em-http-request"
-  s.add_runtime_dependency "hot_tub", "~> 0.2.1"
+  s.add_runtime_dependency "hot_tub", "~> 0.2.2"
   s.add_development_dependency "rspec"
   s.add_development_dependency "builder"
   
