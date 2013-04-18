@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = "em_aws"
   
-  s.add_runtime_dependency "aws-sdk"
+  s.add_runtime_dependency "aws-sdk", "1.8.5"
   s.add_runtime_dependency "em-synchrony"
   s.add_runtime_dependency "em-http-request"
   s.add_runtime_dependency "hot_tub", "~> 0.2.4"
