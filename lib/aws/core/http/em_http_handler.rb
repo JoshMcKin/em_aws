@@ -18,8 +18,7 @@ module AWS
       # require 'aws/core/http/em_http_handler'
       # AWS.config(
       #   :http_handler => AWS::Http::EMHttpHandler.new(
-      #   :proxy => {:host => "http://myproxy.com",
-      #   :port => 80,
+      #   :proxy_uri => URI.parse("http://myproxy.com"),
       #   :pool_size => 20, # not set by default which disables connection pooling
       #   :async => false # if set to true all requests are handle asynchronously and initially return nil
       #   }))
@@ -96,6 +95,14 @@ module AWS
           end
         end
 
+        def proxy_uri
+          @default_request_options[:proxy_uri]
+        end
+
+        def ssl_verify_peer?
+          @default_request_options[:ssl_verify_peer]
+        end
+
         private
 
         def fetch_url(request)
@@ -110,19 +117,15 @@ module AWS
           {:head => headers}
         end
 
-        def fetch_proxy(request)
-          opts={}
-          if request.proxy_uri
-            opts[:proxy] = {:host => request.proxy_uri.host,:port => request.proxy_uri.port}
-          end
-          opts
+        def fetch_proxy
+          return {:proxy => {:host => proxy_uri.host, :port => proxy_uri.port}} if proxy_uri
+          {}
         end
 
         def fetch_ssl(request)
           opts = {}
-          if request.use_ssl? && request.ssl_verify_peer?
-            opts[:private_key_file] = request.ssl_ca_file
-            opts[:cert_chain_file]= request.ssl_ca_file
+          if request.use_ssl? && ssl_verify_peer?
+            warn "As of this release of Em-AWS; Eventamachine and EM-http-request do not support ssl_verify_peer, see: https://github.com/igrigorik/em-http-request/pull/179"
           end
           opts
         end
@@ -130,7 +133,7 @@ module AWS
         def fetch_request_options(request)
           opts = default_request_options.
             merge(fetch_headers(request).
-                  merge(fetch_proxy(request)).
+                  merge(fetch_proxy).
                   merge(fetch_ssl(request)))
             opts[:query] = request.querystring
           if request.body_stream.respond_to?(:path)
