@@ -8,7 +8,8 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Joshua Mckinney"]
   s.email       = ["joshmckin@gmail.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/JoshMcKin/em_aws"
+  s.license     = "MIT"
   s.summary     = %q{Adds EM-Synchrony support to AWS-SDK gem}
   s.description = %q{Adds EM-Synchrony support to AWS-SDK gem}
 
