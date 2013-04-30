@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     em_aws (0.3.0.beta)
-      aws-sdk (~> 1.9.3)
+      aws-sdk
       em-http-request
       em-synchrony
       hot_tub (~> 0.2.4)
@@ -30,15 +30,11 @@ GEM
     em-synchrony (1.0.3)
       eventmachine (>= 1.0.0.beta.1)
     eventmachine (1.0.3)
-    eventmachine (1.0.3-java)
     eventmachine_httpserver (0.2.1)
     hot_tub (0.2.5)
     http_parser.rb (0.5.3)
-    http_parser.rb (0.5.3-java)
     json (1.7.7)
-    json (1.7.7-java)
     nokogiri (1.5.9)
-    nokogiri (1.5.9-java)
     rspec (2.13.0)
       rspec-core (~> 2.13.0)
       rspec-expectations (~> 2.13.0)
@@ -50,7 +46,6 @@ GEM
     uuidtools (2.1.4)
 
 PLATFORMS
-  java
   ruby
 
 DEPENDENCIES
