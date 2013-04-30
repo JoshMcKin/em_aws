@@ -137,56 +137,30 @@ module AWS::Core
             opts[:file].should eql(my_io.path)
           end
         end
+        
       end
-      describe '#fetch_proxy' do
-        context ':proxy_uri' do
-          it 'passes proxy address and port from the request' do
-            handler.stub(:proxy_uri).and_return(URI.parse('https://user:pass@proxy.com:443/path?query'))
-            handler.send(:fetch_proxy)[:proxy][:host].should == 'proxy.com'
-            handler.send(:fetch_proxy)[:proxy][:port].should == 443
+
+      describe '#fetch_client_options' do
+        it "should remove pool related options" do
+          opts = handler.send(:fetch_client_options)
+          opts.has_key?(:size).should be_false
+          opts.has_key?(:never_block).should be_false
+          opts.has_key?(:blocking_timeout).should be_false
+        end
+        context "with_pool is true" do
+          it "should set keepalive as true" do
+            handler.stub(:with_pool?).and_return(true)
+            opts = handler.send(:fetch_client_options)
+            opts[:keepalive].should be_true
           end
         end
-
-        # describe '#fetch_ssl' do
-        #   # it 'prefers the request option when set' do
-        #   #   req.use_ssl = true
-        #   #   handler.stub(:ssl_verify_peer?).and_return(true)
-        #   #   handler.stub(:ssl_ca_file).and_return("something")
-        #   #   handler.send(:fetch_ssl,(req))[:private_key_file].should == "something"
-        #   #   handler.send(:fetch_ssl,(req))[:cert_chain_file].should == "something"
-        #   # end
-
-        #   # context 'CA cert path' do
-        #   #   context 'use_ssl? is true' do
-
-        #   #     before(:each) { req.use_ssl = true }
-
-        #   #     context 'ssl_verify_peer? is true' do
-
-        #   #       before(:each) do
-        #   #         handler.stub(:ssl_verify_peer?).and_return(true)
-        #   #         handler.stub(:ssl_ca_file).and_return("foobar.txt")
-        #   #       end
-
-        #   #       it 'should use the ssl_ca_file attribute of the request' do
-        #   #         handler.send(:fetch_ssl,(req))[:private_key_file].should == "foobar.txt"
-        #   #       end
-
-        #   #       it 'should use the ssl_ca_file attribute of the request' do
-        #   #         handler.send(:fetch_ssl,(req))[:cert_chain_file].should == "foobar.txt"
-        #   #       end
-        #   #     end
-
-        #   #     it 'should not set the ssl_ca_file option without ssl_verify_peer?' do
-        #   #       handler.send(:fetch_ssl,(req)).should_not include(:private_key_file)
-        #   #     end
-        #   #   end
-
-        #   #   it 'should not set the ssl_ca_file option without use_ssl?' do
-        #   #     handler.send(:fetch_ssl,(req)).should_not include(:private_key_file)
-        #   #   end
-        #   # end
-        # end
+        context "with_pool is false" do
+          it "should keepalive be false" do
+            handler.stub(:with_pool?).and_return(false)
+            opts = handler.send(:fetch_client_options)
+            opts[:keepalive].should_not be_true
+          end
+        end
       end
 
       it "should not timeout" do

@@ -12,16 +12,23 @@ module AWS
       # http://www.mikeperham.com/2010/04/03/introducing-phat-an-asynchronous-rails-app/
       # for examples of Aync-Rails application
       #
-      # In Rails add the following to you various environment files:
+      # In Rails add the following to your aws.rb initializer
       #
       # require 'aws-sdk'
       # require 'aws/core/http/em_http_handler'
       # AWS.config(
       #   :http_handler => AWS::Http::EMHttpHandler.new(
-      #   :proxy_uri => URI.parse("http://myproxy.com"),
+      #     :proxy => {:host => '127.0.0.1',    # proxy address
+      #        :port => 9000,                 # proxy port
+      #        :type => :socks5},
       #   :pool_size => 20, # not set by default which disables connection pooling
       #   :async => false # if set to true all requests are handle asynchronously and initially return nil
       #   }))
+      #
+      # EM-AWS exposes all connections options for EM-Http-Request at initialization
+      # For more information on available options see https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters
+      # If Options from the request section of the above link are present set on every request
+      # but may be over written by the request object
       class EMHttpHandler
 
         EM_PASS_THROUGH_ERRORS = [
@@ -32,7 +39,7 @@ module AWS
           SystemStackError, RegexpError, IndexError,
         ]
         # @return [Hash] The default options to send to EM-Synchrony on each request.
-        attr_reader :default_request_options
+        attr_reader :default_options
 
         # Constructs a new HTTP handler using EM-Synchrony.
         # @param [Hash] options Default options to send to EM-Synchrony on
@@ -43,20 +50,18 @@ module AWS
         # +:ssl_ca_file+ option to {AWS.config} or
         # {AWS::Configuration} instead.
         def initialize options = {}
-          @default_request_options = options
-          @client_options = {
-            :inactivity_timeout => (options[:inactivity_timeout] || 0),
-            :connect_timeout => (options[:connect_timeout] || 10)
-          }
-          @pool_options = {
-            :with_pool => true,
-            :size => ((options[:pool_size].to_i || 5)),
-            :never_block => (options[:never_block].nil? ? true : options[:never_block]),
-            :blocking_timeout => (options[:pool_timeout] || 10)
-          }
-          if @pool_options[:size] > 0
-            @pool = HotTub::Session.new(@pool_options) { |url| EM::HttpRequest.new(url,@client_options)}
+          @default_options = options
+          if with_pool?
+            @pool = HotTub::Session.new(pool_options) { |url| EM::HttpRequest.new(url,client_options)}
           end
+        end
+
+        def client_options
+          @client_options ||= fetch_client_options
+        end
+        
+        def pool_options
+          @pool_options ||= fetch_pool_options
         end
 
         def handle(request,response,&read_block)
@@ -95,15 +100,31 @@ module AWS
           end
         end
 
-        def proxy_uri
-          @default_request_options[:proxy_uri]
-        end
-
-        def ssl_verify_peer?
-          @default_request_options[:ssl_verify_peer]
+        def with_pool?
+          (default_options[:pool_size].to_i > 0)
         end
 
         private
+
+        def fetch_client_options
+          co = ({} || default_options.dup)
+          co.delete(:size)
+          co.delete(:never_block)
+          co.delete(:blocking_timeout)
+          co[:inactivity_timeout] ||= 0
+          co[:connect_timeout] ||= 10
+          co[:keepalive] = true if with_pool?
+          co
+        end
+
+        def fetch_pool_options
+          {
+            :with_pool => true,
+            :size => ((default_options[:pool_size].to_i || 5)),
+            :never_block => (default_options[:never_block].nil? ? true : default_options[:never_block]),
+            :blocking_timeout => (default_options[:blocking_timeout] || 10)
+          }
+        end
 
         def fetch_url(request)
           "#{(request.use_ssl? ? "https" : "http")}://#{request.host}:#{request.port}"
@@ -117,24 +138,8 @@ module AWS
           {:head => headers}
         end
 
-        def fetch_proxy
-          return {:proxy => {:host => proxy_uri.host, :port => proxy_uri.port}} if proxy_uri
-          {}
-        end
-
-        def fetch_ssl(request)
-          opts = {}
-          if request.use_ssl? && ssl_verify_peer?
-            warn "As of this release of Em-AWS; Eventamachine and EM-http-request do not support ssl_verify_peer, see: https://github.com/igrigorik/em-http-request/pull/179"
-          end
-          opts
-        end
-
         def fetch_request_options(request)
-          opts = default_request_options.
-            merge(fetch_headers(request).
-                  merge(fetch_proxy).
-                  merge(fetch_ssl(request)))
+          opts = default_options.merge(fetch_headers(request))
             opts[:query] = request.querystring
           if request.body_stream.respond_to?(:path)
             opts[:file] = request.body_stream.path
@@ -150,12 +155,12 @@ module AWS
           url = fetch_url(request)
           if @pool
             @pool.run(url) do |connection|
-              req = connection.send(method, {:keepalive => true}.merge(opts))
+              req = connection.send(method, opts)
               req.stream &read_block if block_given?
               return  EM::Synchrony.sync req unless opts[:async]
             end
           else
-            clnt_opts = @client_options.merge(:inactivity_timeout => request.read_timeout)
+            clnt_opts = client_options.merge(:inactivity_timeout => request.read_timeout)
             req = EM::HttpRequest.new(url,clnt_opts).send(method,opts)
             req.stream &read_block if block_given?
             return  EM::Synchrony.sync req unless opts[:async]
