@@ -4,7 +4,6 @@ source "http://rubygems.org"
 gemspec
 
 group :test do
-  gem 'debugger'
   gem 'ZenTest', '~> 4.8.2'
   gem 'eventmachine_httpserver', :require => 'evma_httpserver'
 end

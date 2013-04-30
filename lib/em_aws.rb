@@ -4,8 +4,7 @@ require 'em_aws/version'
 require 'em-http'
 require 'em-synchrony'
 require 'em-synchrony/em-http'
-#require 'aws/core/autoloader'
 require 'aws/core/http/em_http_handler'
 
-#AWS.eager_autoload! # lazy load isn't thread safe
+AWS.eager_autoload! # lazy load isn't thread safe
 module EmAws;end
