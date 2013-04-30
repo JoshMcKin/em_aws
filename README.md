@@ -43,7 +43,7 @@ All requests to AWS will use EM-Synchrony's implementation of em-http-request fo
 
 ## Connection Pooling (keep-alive)
 
-To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set to 0 which will leave the connection open for as long as the client allows. Connects
+We use [HotTub](https://github.com/JoshMcKin/hot_tub) to manage connection pooling. To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set to 0 which will leave the connection open for as long as the client allows. Connects
 are created lazy, so pools grow until they meet the set pool size.
     
     require 'aws-sdk'
