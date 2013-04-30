@@ -21,14 +21,14 @@ module AWS
       #     :proxy => {:host => '127.0.0.1',    # proxy address
       #        :port => 9000,                 # proxy port
       #        :type => :socks5},
-      #   :pool_size => 20, # not set by default which disables connection pooling
-      #   :async => false # if set to true all requests are handle asynchronously and initially return nil
-      #   }))
-      #
+      #   :pool_size => 20,   # Default is 0, set to > 0 to enable pooling
+      #   :async => false))   # If set to true all requests are handle asynchronously 
+      #                       # and initially return nil
+      # 
       # EM-AWS exposes all connections options for EM-Http-Request at initialization
       # For more information on available options see https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters
-      # If Options from the request section of the above link are present set on every request
-      # but may be over written by the request object
+      # If Options from the request section of the above link are present, they
+      # set on every request but may be over written by the request object
       class EMHttpHandler
 
         EM_PASS_THROUGH_ERRORS = [
@@ -47,8 +47,7 @@ module AWS
         # +head+, +put+, or +delete+ when a request is made. Note
         # that +:body+, +:head+, +:parser+, and +:ssl_ca_file+ are
         # ignored. If you need to set the CA file, you should use the
-        # +:ssl_ca_file+ option to {AWS.config} or
-        # {AWS::Configuration} instead.
+        # +:ssl_ca_file+ see https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters
         def initialize options = {}
           @default_options = options
           if with_pool?
