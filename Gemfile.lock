@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     em_aws (0.3.0.beta)
-      aws-sdk
+      aws-sdk (~> 1.9.3)
       em-http-request
       em-synchrony
       hot_tub (~> 0.2.4)
