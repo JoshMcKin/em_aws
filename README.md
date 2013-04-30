@@ -7,11 +7,13 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
     $ gem install em_aws
 
 ### Requirements
-  EmAws 0.3+ requires AWS-SDK-Ruby >= 1.9.3
-  EmAws 0.2 is available for those using AWS-SDK-Ruby <= 1.8.5
-  AWS-SDK-Ruby 1.9.0 to 1.9.2 are not compatible with any version of EmAws; see [here](https://github.com/aws/aws-sdk-ruby/issues/237)
+
+  * EmAws 0.3+ requires AWS-SDK-Ruby >= 1.9.3
+  * EmAws 0.2 is available for those using AWS-SDK-Ruby <= 1.8.5
+  * AWS-SDK-Ruby 1.9.0 to 1.9.2 are not compatible with any version of EmAws; see [here](https://github.com/aws/aws-sdk-ruby/issues/237)
 
 ## Rails 3 setup
+
 Setup [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
 
 Assuming you've already setup async-rails, add em_aws to your gemfile:
@@ -40,8 +42,8 @@ Your done.
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP requests and fiber management. See [EM-HTTP-Request](https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters) for all client options
 
 ## Connection Pooling (keep-alive)
-To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set
-to 0 which will leave the connection open for as long as the client allows. Connects
+
+To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set to 0 which will leave the connection open for as long as the client allows. Connects
 are created lazy, so pools grow until they meet the set pool size.
     
     require 'aws-sdk'
