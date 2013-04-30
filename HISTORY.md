@@ -4,6 +4,17 @@ EmAws Changelog
 HEAD
 =======
 
+0.3.0.beta
+=======
+
+- requires AWS-SDK 1.9.3 for thread saftey issues in 1.9.0-1.9.2
+- refactors client API to expose EM-Http-Request client options directly
+
+0.2.9
+=======
+
+- AWS-SDK 1.9+ breaks EmAws 0.2, require AWS-SDK <= 1.8.5
+
 0.2.8
 =======
 

@@ -1,13 +1,17 @@
 # EmAws
 An EM-Synchrony handler for Ruby [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby)
-
 ## Installation
 
 em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can be installed via:
 
     $ gem install em_aws
 
-## Rails 3 setup (no rails 2 sorry)
+### Requirements
+  EmAws 0.3+ requires AWS-SDK-Ruby >= 1.9.3
+  EmAws 0.2 is available for those using AWS-SDK-Ruby <= 1.8.5
+  AWS-SDK-Ruby 1.9.0 to 1.9.2 are not compatible with any version of EmAws; see [here](https://github.com/aws/aws-sdk-ruby/issues/237)
+
+## Rails 3 setup
 Setup [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
 
 Assuming you've already setup async-rails, add em_aws to your gemfile:
@@ -18,20 +22,22 @@ Then run:
     
     bundle install
 
-In your environments files add:
+Add the following to your aws.rb initializer:
 
     require 'aws-sdk'
     require 'aws/core/http/em_http_handler'
-    AWS.eager_autoload! # AWS lazyloading is not threadsafe
     AWS.config(
-      :http_handler => AWS::Http::EMHttpHandler.new(
-      :proxy => {:host => "http://myproxy.com", :port => 80}))
-      :pool_size => 0 # by default connection pooling is off
-      :async => false # if set to true all requests for this client will be asynchronous
+    :http_handler => AWS::Http::EMHttpHandler.new(
+         :proxy => { :host => '127.0.0.1',  # proxy address
+            :port => 9000,                  # proxy port
+            :type => :socks5 },
+       :pool_size => 20,   # Default is 0, set to > 0 to enable pooling
+       :async => false))   # If set to true all requests are handle asynchronously 
+                           # and initially return nil
 
 Your done. 
 
-All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP requests and fiber management.
+All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP requests and fiber management. See [EM-HTTP-Request](https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters) for all client options
 
 ## Connection Pooling (keep-alive)
 To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set
@@ -44,16 +50,13 @@ are created lazy, so pools grow until they meet the set pool size.
       :http_handler => AWS::Http::EMHttpHandler.new({
         :pool_size => 20,
         :inactivity_timeout => 0, # number of seconds to timeout stale connections in the pool,
-        :never_block => true, # if we run out of connections, create a new one
-        :proxy => {:host => "http://myproxy.com",:port => 80})
+        :never_block => true) # if we run out of connections, create a new one
     )
 
 ## Streaming
-Requires [AWS-SKD-Ruby >= 1.6.3](http://aws.amazon.com/releasenotes/Ruby/5728376747252106)
-    
-    # Stream from disk
-    # You can pass an IO object in the :data option instead but the object must 
-    # respond to :path. We cannot stream from memory at this time.
+Streaming from disk,You can pass an IO object in the :data option instead but the object must 
+respond to :path. We cannot stream from memory at this time.
+
     EM.synchrony do
       s3 = AWS::S3.new 
       s3.buckets['bucket_name'].objects["foo.txt"].write(:file => "path_to_file")
