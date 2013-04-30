@@ -37,7 +37,7 @@ Add the following to your aws.rb initializer:
        :async => false))   # If set to true all requests are handle asynchronously 
                            # and initially return nil
 
-Your done. 
+You are done. 
 
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP requests and fiber management. See [EM-HTTP-Request](https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters) for all client options
 
