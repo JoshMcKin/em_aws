@@ -22,9 +22,9 @@ module AWS
       #        :port => 9000,                 # proxy port
       #        :type => :socks5},
       #   :pool_size => 20,   # Default is 0, set to > 0 to enable pooling
-      #   :async => false))   # If set to true all requests are handle asynchronously 
+      #   :async => false))   # If set to true all requests are handle asynchronously
       #                       # and initially return nil
-      # 
+      #
       # EM-AWS exposes all connections options for EM-Http-Request at initialization
       # For more information on available options see https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters
       # If Options from the request section of the above link are present, they
@@ -38,29 +38,22 @@ module AWS
           LocalJumpError, SignalException, ScriptError,
           SystemStackError, RegexpError, IndexError,
         ]
-        # @return [Hash] The default options to send to EM-Synchrony on each request.
-        attr_reader :default_options
+
+        attr_reader :default_options, :client_options, :pool_options, :pool
 
         # Constructs a new HTTP handler using EM-Synchrony.
         # @param [Hash] options Default options to send to EM-Synchrony on
         # each request. These options will be sent to +get+, +post+,
         # +head+, +put+, or +delete+ when a request is made. Note
         # that +:body+, +:head+, +:parser+, and +:ssl_ca_file+ are
-        # ignored. If you need to set the CA file, you should use the
-        # +:ssl_ca_file+ see https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters
+        # ignored. If you need to set the CA file see:
+        # https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters
         def initialize options = {}
           @default_options = options
-          if with_pool?
-            @pool = HotTub::Session.new(pool_options) { |url| EM::HttpRequest.new(url,client_options)}
-          end
-        end
-
-        def client_options
-          @client_options ||= fetch_client_options
-        end
-        
-        def pool_options
-          @pool_options ||= fetch_pool_options
+          @client_options = fetch_client_options
+          @pool_options = fetch_pool_options
+          @pool = HotTub::Session.new(pool_options) { |url|
+            EM::HttpRequest.new(url,client_options)} if with_pool?
         end
 
         def handle(request,response,&read_block)
@@ -69,7 +62,7 @@ module AWS
           else
             EM.synchrony do
               process_request(request,response,&read_block)
-              @pool.close_all if @pool
+              pool.close_all if pool
               EM.stop
             end
           end
@@ -93,7 +86,7 @@ module AWS
           else
             EM.synchrony do
               process_request(request,response,true,&read_block)
-              @pool.close_all if @pool
+              pool.close_all if @pool
               EM.stop
             end
           end
@@ -107,7 +100,7 @@ module AWS
 
         def fetch_client_options
           co = ({} || default_options.dup)
-          co.delete(:size)
+          co.delete(:pool_size)
           co.delete(:never_block)
           co.delete(:blocking_timeout)
           co[:inactivity_timeout] ||= 0
@@ -138,8 +131,8 @@ module AWS
         end
 
         def fetch_request_options(request)
-          opts = default_options.merge(fetch_headers(request))
-            opts[:query] = request.querystring
+          opts = client_options.merge(fetch_headers(request))
+          opts[:query] = request.querystring
           if request.body_stream.respond_to?(:path)
             opts[:file] = request.body_stream.path
           else
@@ -152,8 +145,8 @@ module AWS
         def fetch_response(request,opts={},&read_block)
           method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
           url = fetch_url(request)
-          if @pool
-            @pool.run(url) do |connection|
+          if pool
+            pool.run(url) do |connection|
               req = connection.send(method, opts)
               req.stream &read_block if block_given?
               return  EM::Synchrony.sync req unless opts[:async]
