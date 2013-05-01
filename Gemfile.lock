@@ -12,7 +12,7 @@ GEM
   specs:
     ZenTest (4.8.4)
     addressable (2.3.4)
-    aws-sdk (1.9.3)
+    aws-sdk (1.9.5)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
       uuidtools (~> 2.1)
@@ -31,7 +31,7 @@ GEM
       eventmachine (>= 1.0.0.beta.1)
     eventmachine (1.0.3)
     eventmachine_httpserver (0.2.1)
-    hot_tub (0.2.5)
+    hot_tub (0.2.6)
     http_parser.rb (0.5.3)
     json (1.7.7)
     nokogiri (1.5.9)
