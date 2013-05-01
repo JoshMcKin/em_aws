@@ -4,7 +4,7 @@ EmAws Changelog
 HEAD
 =======
 
-0.3.0.beta
+0.3.0
 =======
 
 - requires AWS-SDK 1.9.3 for thread saftey issues in 1.9.0-1.9.2
