@@ -8,5 +8,5 @@ require 'aws/core/http/em_http_handler'
 require 'hot_tub'
 
 AWS.eager_autoload! # lazy load isn't thread safe
-HotTub.logger = AWS.config.logger
+HotTub.logger = AWS.config.logger if AWS.config.logger
 module EmAws;end
