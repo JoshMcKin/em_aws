@@ -4,6 +4,9 @@ EmAws Changelog
 HEAD
 =======
 
+- check for Aws.config.logger when setting HotTub.logger [kybishop #21]
+- Clean up specs [kybishop #22]
+
 0.3.0
 =======
 
