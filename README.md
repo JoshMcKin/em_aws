@@ -8,13 +8,11 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
 
 ### Requirements
 
-  * EmAws 0.3.x requires [AWS-SDK-v1](https://github.com/aws/aws-sdk-ruby/tree/aws-sdk-v1)
-  * EmAws 0.2.x is available for those using AWS-SDK-Ruby <= 1.8.5
-  * AWS-SDK-Ruby 1.9.0 to 1.9.2 are not compatible with any version of EmAws; see [here](https://github.com/aws/aws-sdk-ruby/issues/237)
+  * EmAws 0.4.x requires [AWS-SDK-v1](https://github.com/aws/aws-sdk-ruby/blob/aws-sdk-v1)
 
 ## Rails 3 setup
 
-Setup [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/master/README.rdoc) as you would normally.
+Setup [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby/blob/aws-sdk-v1/README.md) as you would normally.
 
 Assuming you've already setup async-rails, add em_aws to your gemfile:
     
