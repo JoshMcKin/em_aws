@@ -4,6 +4,12 @@ EmAws Changelog
 HEAD
 =======
 
+- Update to aws-skd-v1
+- Update specs
+
+0.3.2
+=======
+
 - check for Aws.config.logger when setting HotTub.logger [kybishop #21]
 - Clean up specs [kybishop #22]
 
