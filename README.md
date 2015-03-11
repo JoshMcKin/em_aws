@@ -8,7 +8,7 @@ em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can
 
 ### Requirements
 
-  * EmAws 0.3.x requires AWS-SDK-Ruby >= 1.9.3
+  * EmAws 0.3.x requires [AWS-SDK-v1](https://github.com/aws/aws-sdk-ruby/tree/aws-sdk-v1)
   * EmAws 0.2.x is available for those using AWS-SDK-Ruby <= 1.8.5
   * AWS-SDK-Ruby 1.9.0 to 1.9.2 are not compatible with any version of EmAws; see [here](https://github.com/aws/aws-sdk-ruby/issues/237)
 
@@ -26,7 +26,7 @@ Then run:
 
 Add the following to your aws.rb initializer:
 
-    require 'aws-sdk'
+    require 'aws-sdk-v1'
     require 'aws/core/http/em_http_handler'
     AWS.config(
     :http_handler => AWS::Http::EMHttpHandler.new(

@@ -69,8 +69,7 @@ module AWS::Core
       end
 
       it 'should be accessible from AWS as well as AWS::Core' do
-        AWS::Http::EMHttpHandler.new
-          .should be_an(AWS::Core::Http::EMHttpHandler)
+        expect(AWS::Http::EMHttpHandler.new).to be_an(AWS::Core::Http::EMHttpHandler)
       end
 
       it "should not timeout" do
@@ -87,11 +86,11 @@ module AWS::Core
             EventMachine::start_server request.host, request.port, SlowServer
           end
 
-          handler.stub(:fetch_url).and_return("http://127.0.0.1:8081")
+          allow(handler).to receive(:fetch_url).and_return("http://127.0.0.1:8081")
 
           handler.handle(request,response)
 
-          response.network_error.should be_nil
+          expect(response.network_error).to be_nil
 
           EM.stop
         end
@@ -111,13 +110,13 @@ module AWS::Core
             EventMachine::start_server request.host, request.port, SlowServer
           end
 
-          handler.stub(:fetch_url).and_return("http://127.0.0.1:8081")
-          request.stub(:read_timeout).and_return(0.01)
-          handler.stub(:connect_timeout).and_return(1) #just to speed up the test
+          allow(handler).to receive(:fetch_url).and_return("http://127.0.0.1:8081")
+          allow(request).to receive(:read_timeout).and_return(0.01)
+          allow(handler).to receive(:connect_timeout).and_return(1) #just to speed up the test
 
           handler.handle(request,response)
 
-          response.network_error.should be_a(Timeout::Error)
+          expect(response.network_error).to be_a(Timeout::Error)
 
           EM.stop
         end
@@ -126,9 +125,7 @@ module AWS::Core
       describe '#handle' do
         context 'timeouts' do
           it 'should rescue Timeout::Error' do
-            handler
-              .stub(:fetch_response)
-              .and_raise(Timeout::Error)
+            allow(handler).to receive(:fetch_response).and_raise(Timeout::Error)
 
             expect {
               handler.handle(req, resp)
@@ -136,9 +133,7 @@ module AWS::Core
           end
 
           it 'should rescue Errno::ETIMEDOUT' do
-            handler
-              .stub(:fetch_response)
-              .and_raise(Errno::ETIMEDOUT)
+            allow(handler).to receive(:fetch_response).and_raise(Errno::ETIMEDOUT)
 
             expect {
               handler.handle(req, resp)
@@ -146,30 +141,26 @@ module AWS::Core
           end
 
           it 'should indicate that there was a network_error' do
-            handler
-              .stub(:fetch_response)
-              .and_raise(Errno::ETIMEDOUT)
+            allow(handler).to receive(:fetch_response).and_raise(Errno::ETIMEDOUT)
 
             handler.handle(req, resp)
 
-            resp.network_error?.should be_true
+            expect(resp).to be_network_error
           end
         end
 
         context 'default request options' do
           before(:each) do
-            handler
-              .stub(:default_request_options)
-              .and_return(:foo => "BAR", :private_key_file => "blarg")
+            allow(handler).to receive(:default_request_options).and_return(:foo => "BAR", :private_key_file => "blarg")
           end
 
           it 'passes extra options through to synchrony' do
-            handler.default_request_options[:foo].should == "BAR"
+            expect(handler.default_request_options[:foo]).to eql("BAR")
           end
 
           it 'uses the default when the request option is not set' do
             #puts handler.default_request_options
-            handler.default_request_options[:private_key_file].should == "blarg"
+            expect(handler.default_request_options[:private_key_file]).to eql("blarg")
           end
         end
       end
@@ -177,18 +168,18 @@ module AWS::Core
       describe '#fetch_request_options' do
         it "should set :query and :body to request.querystring" do
           opts = handler.send(:fetch_request_options, req)
-          opts[:query].should eql(req.querystring)
+          expect(opts[:query]).to eql(req.querystring)
         end
 
         it "should set :path to request.path" do
           opts = handler.send(:fetch_request_options, req)
-          opts[:path].should eql(req.path)
+          expect(opts[:path]).to eql(req.path)
         end
 
         context "request.body_stream is a StringIO" do
           it "should set :body to request.body_stream" do
             opts = handler.send(:fetch_request_options, req)
-            opts[:body].should eql("myStringIO")
+            expect(opts[:body]).to eql("myStringIO")
           end
         end
 
@@ -196,14 +187,12 @@ module AWS::Core
           let(:io_object) { EMFooIO.new }
 
           before(:each) do
-            req
-              .stub(:body_stream)
-              .and_return(io_object)
+            allow(req).to receive(:body_stream).and_return(io_object)
           end
 
           it "should set :file to object.path " do
             opts = handler.send(:fetch_request_options, req)
-            opts[:file].should eql(io_object.path)
+            expect(opts[:file]).to eql(io_object.path)
           end
         end
       end
@@ -212,36 +201,32 @@ module AWS::Core
         it "should remove pool related options" do
           opts = handler.send(:fetch_client_options)
 
-          opts.has_key?(:size).should be_false
-          opts.has_key?(:never_block).should be_false
-          opts.has_key?(:blocking_timeout).should be_false
+          expect(opts.has_key?(:size)).to eql(false)
+          expect(opts.has_key?(:never_block)).to eql(false)
+          expect(opts.has_key?(:blocking_timeout)).to eql(false)
         end
 
         context "when with_pool is true" do
           before(:each) do
-            handler
-              .stub(:with_pool?)
-              .and_return(true)
+            allow(handler).to receive(:with_pool?).and_return(true)
           end
 
           it "should set keepalive as true" do
             opts = handler.send(:fetch_client_options)
 
-            opts[:keepalive].should be_true
+            expect(opts[:keepalive]).to eql(true)
           end
         end
 
         context "when with_pool is false" do
           before(:each) do
-            handler
-              .stub(:with_pool?)
-              .and_return(false)
+            allow(handler).to receive(:with_pool?).and_return(false)
           end
 
           it "should keepalive be false" do
             opts = handler.send(:fetch_client_options)
 
-            opts[:keepalive].should_not be_true
+            expect(opts[:keepalive]).to be_falsey
           end
         end
       end

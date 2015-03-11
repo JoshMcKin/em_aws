@@ -1,5 +1,5 @@
 require 'em_aws/patches'
-require 'aws-sdk'
+require 'aws-sdk-v1'
 require 'em_aws/version'
 require 'em-http'
 require 'em-synchrony'

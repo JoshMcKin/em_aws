@@ -31,12 +31,11 @@ module AWS
       # set on every request but may be over written by the request object
       class EMHttpHandler
 
-        EM_PASS_THROUGH_ERRORS = [
-          NoMethodError, FloatDomainError, TypeError, NotImplementedError,
-          SystemExit, Interrupt, SyntaxError, RangeError, NoMemoryError,
-          ArgumentError, ZeroDivisionError, LoadError, NameError,
-          LocalJumpError, SignalException, ScriptError,
-          SystemStackError, RegexpError, IndexError,
+        NETWORK_ERRORS = [
+          SocketError, EOFError, IOError, Timeout::Error,
+          Errno::ECONNABORTED, Errno::ECONNRESET, Errno::EPIPE,
+          Errno::EINVAL, Errno::ETIMEDOUT, Errno::EHOSTUNREACH,
+          OpenSSL::SSL::SSLError
         ]
 
         attr_reader :default_options, :client_options, :pool_options, :pool
@@ -191,11 +190,7 @@ module AWS
               response.headers = fetch_response_headers(http_response)
               response.body = http_response.response
             end
-          rescue Timeout::Error => error
-            response.network_error = error
-          rescue *EM_PASS_THROUGH_ERRORS => error
-            raise error
-          rescue Exception => error
+          rescue *NETWORK_ERRORS => error
             response.network_error = error
           end
           nil

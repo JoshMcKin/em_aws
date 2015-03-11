@@ -15,12 +15,14 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = "em_aws"
   
-  s.add_runtime_dependency "aws-sdk", ">= 1.9.3"
+  s.add_runtime_dependency 'aws-sdk-v1'
   s.add_runtime_dependency "em-synchrony"
   s.add_runtime_dependency "em-http-request"
   s.add_runtime_dependency "hot_tub", "~> 0.2.4"
+  s.add_development_dependency "bundler", "~> 1.7"
   s.add_development_dependency "rspec"
-  s.add_development_dependency "builder"
+  s.add_development_dependency "rspec-autotest"
+  s.add_development_dependency "autotest"
   
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
