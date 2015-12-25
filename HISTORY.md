@@ -6,6 +6,8 @@ HEAD
 
 - Update to aws-skd-v1
 - Update specs
+- Use em-hot_tub
+- Add integration tests
 
 0.3.2
 =======

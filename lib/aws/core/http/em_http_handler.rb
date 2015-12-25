@@ -51,8 +51,14 @@ module AWS
           @default_options = options
           @client_options = fetch_client_options
           @pool_options = fetch_pool_options
-          @pool = HotTub::Session.new(pool_options) { |url|
-            EM::HttpRequest.new(url,client_options)} if with_pool?
+
+          if with_pool?
+            @sessions = EM::HotTub::Sessions.new(pool_options) do |url|
+              EM::HttpRequest.new(url,@client_options) 
+            end
+          else
+            @sessions = nil
+          end
         end
 
         def handle(request,response,&read_block)
@@ -61,7 +67,7 @@ module AWS
           else
             EM.synchrony do
               process_request(request,response,&read_block)
-              pool.close_all if pool
+              @sessions.shutdown! if @sessions
               EM.stop
             end
           end
@@ -85,7 +91,7 @@ module AWS
           else
             EM.synchrony do
               process_request(request,response,true,&read_block)
-              pool.close_all if @pool
+              sessions.shutdown! if @pool
               EM.stop
             end
           end
@@ -110,10 +116,8 @@ module AWS
 
         def fetch_pool_options
           {
-            :with_pool => true,
             :size => ((default_options[:pool_size].to_i || 5)),
-            :never_block => (default_options[:never_block].nil? ? true : default_options[:never_block]),
-            :blocking_timeout => (default_options[:blocking_timeout] || 10)
+            :wait_timeout => (default_options[:wait_timeout] || default_options[:blocking_timeout] || 10)
           }
         end
 
@@ -130,7 +134,7 @@ module AWS
         end
 
         def fetch_request_options(request)
-          opts = client_options.merge(fetch_headers(request))
+          opts = @client_options.merge(fetch_headers(request))
           opts[:query] = request.querystring
           if request.body_stream.respond_to?(:path)
             opts[:file] = request.body_stream.path
@@ -141,22 +145,27 @@ module AWS
           opts
         end
 
+        def pool(url)
+          @sessions.get_or_set(url, @pool_options) { EM::HttpRequest.new(url,@client_options) }
+        end
+
         def fetch_response(request,opts={},&read_block)
           method = "a#{request.http_method}".downcase.to_sym  # aget, apost, aput, adelete, ahead
           url = fetch_url(request)
-          if pool
-            pool.run(url) do |connection|
+          result = nil
+          if @sessions
+            pool(url).run do |connection|
               req = connection.send(method, opts)
               req.stream &read_block if block_given?
-              return  EM::Synchrony.sync req unless opts[:async]
+              result = EM::Synchrony.sync req unless opts[:async]
             end
           else
-            clnt_opts = client_options.merge(:inactivity_timeout => request.read_timeout)
+            clnt_opts = @client_options.merge(:inactivity_timeout => request.read_timeout)
             req = EM::HttpRequest.new(url,clnt_opts).send(method,opts)
             req.stream &read_block if block_given?
-            return  EM::Synchrony.sync req unless opts[:async]
+            result = EM::Synchrony.sync req unless opts[:async]
           end
-          nil
+          result
         end
 
         # AWS needs all header keys downcased and values need to be arrays

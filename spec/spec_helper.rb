@@ -7,6 +7,11 @@ require 'bundler/setup'
 require 'logger'
 require 'em-http'
 
+begin
+  require 'byebug'
+rescue LoadError
+end
+
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
 #Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
@@ -18,4 +23,5 @@ end
 AWS.config(:logger => StubLogger.new)
 
 RSpec.configure do |config|
+	
 end

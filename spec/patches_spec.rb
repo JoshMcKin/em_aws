@@ -1,18 +1,19 @@
 require 'spec_helper'
 require 'aws'
 describe Mutex do
-  it "should be a fiber safe mutex" do
+  around(:each) do |example|
     EM.synchrony do
-      expect(AWS::Mutex.new).to be_kind_of(EM::Synchrony::Thread::Mutex)
+      example.run
       EM.stop
     end
   end
 
   it "should be a fiber safe mutex" do
-    EM.synchrony do
-      expect(AWS.mutex.new).to be_kind_of(EM::Synchrony::Thread::Mutex)
-      EM.stop
-    end
+    expect(AWS::Mutex.new).to be_kind_of(EM::Synchrony::Thread::Mutex)
+  end
+
+  it "should be a fiber safe mutex" do
+    expect(AWS.mutex.new).to be_kind_of(EM::Synchrony::Thread::Mutex)
   end
 
   it "should not affect Mutex outside AWS" do
@@ -21,6 +22,7 @@ describe Mutex do
 end
 
 describe Kernel, '#sleep' do
+
   it "should be a fiber safe sleep from with AWS module" do
     EM.synchrony do
       EM::Synchrony.stub(:sleep).and_return("fiber safe")
