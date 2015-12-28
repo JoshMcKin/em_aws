@@ -1,4 +1,4 @@
-# EM::AWS
+# EM::AWS [![Build Status](https://travis-ci.org/JoshMcKin/em_aws.svg)](https://travis-ci.org/JoshMcKin/em_aws)
 An EM-Synchrony handler for Ruby [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby)
 ## Installation
 

@@ -4,5 +4,6 @@ source "https://rubygems.org"
 gemspec
 
 group :test do
+  gem 'rake'	
   gem 'eventmachine_httpserver', :require => 'evma_httpserver'
 end

@@ -40,6 +40,7 @@ GEM
     mini_portile2 (2.0.0)
     nokogiri (1.6.7.1)
       mini_portile2 (~> 2.0.0.rc2)
+    rake (10.4.2)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -64,6 +65,7 @@ DEPENDENCIES
   bundler (~> 1.7)
   em_aws!
   eventmachine_httpserver
+  rake
   rspec
   rspec-autotest
 
