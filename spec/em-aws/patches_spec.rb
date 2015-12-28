@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'aws'
 describe Mutex do
   around(:each) do |example|
     EM.synchrony do

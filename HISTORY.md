@@ -8,6 +8,7 @@ HEAD
 - Update specs
 - Use em-hot_tub
 - Add integration tests
+- EM style name space: require "em-aws"
 
 0.3.2
 =======

@@ -1,8 +1,8 @@
-# EmAws
+# EM::AWS
 An EM-Synchrony handler for Ruby [AWS-SDK-Ruby](https://github.com/aws/aws-sdk-ruby)
 ## Installation
 
-em_aws is available through [Rubygems](https://rubygems.org/gems/em_aws) and can be installed via:
+EM::AWS is available through [Rubygems](https://rubygems.org/gems/em_aws) and can be installed via:
 
     $ gem install em_aws
 
@@ -24,33 +24,21 @@ Then run:
 
 Add the following to your aws.rb initializer:
 
-    require 'aws-sdk-v1'
-    require 'aws/core/http/em_http_handler'
-    AWS.config(
-    :http_handler => AWS::Http::EMHttpHandler.new(
-         :proxy => { :host => '127.0.0.1',  # proxy address
-            :port => 9000,                  # proxy port
-            :type => :socks5 },
-       :pool_size => 20,   # Default is 0, set to > 0 to enable pooling
-       :async => false))   # If set to true all requests are handle asynchronously 
-                           # and initially return nil
+    require 'em-aws'
+    AWS.config( :http_handler => EM::AWS::HttpHandler.new ) 
 
 You are done. 
 
 All requests to AWS will use EM-Synchrony's implementation of em-http-request for non-block HTTP requests and fiber management. See [EM-HTTP-Request](https://github.com/igrigorik/em-http-request/wiki/Issuing-Requests#available-connection--request-parameters) for all client options
 
-## Connection Pooling (keep-alive)
+## Connection Pooling (w/keep-alive)
 
-We use [HotTub](https://github.com/JoshMcKin/hot_tub) to manage connection pooling. To enable connection pooling set the :pool_size to anything greater than 0. By default :inactivity_timeout is set to 0 which will leave the connection open for as long as the client allows. Connects
-are created lazy, so pools grow until they meet the set pool size.
+We use [EM-HotTub](https://github.com/JoshMcKin/em-hot_tub) to manage connection pooling. To enable connection pooling set the :pool_size to anything greater than 1, default is 5. By default :inactivity_timeout is set to 0 which will leave the connection open for as long as the AWS allows. Connections are created lazy, so pools grows to meet concurrency. If we need to limit our total number of connections we can set :max_size. HotTub will reap connections down to :pool_size when load dies.
     
-    require 'aws-sdk-v1'
-    require 'aws/core/http/em_http_handler'
+    require 'em-aws'
     AWS.config(
-      :http_handler => AWS::Http::EMHttpHandler.new({
-        :pool_size => 20,
-        :inactivity_timeout => 0, # number of seconds to timeout stale connections in the pool,
-        :never_block => true) # if we run out of connections, create a new one
+      :http_handler => EM::AWS::HttpHandler.new({
+        :pool_size => 20, # default is 5, setting to 1 disables pool
     )
 
 ## Streaming

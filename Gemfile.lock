@@ -3,7 +3,7 @@ PATH
   specs:
     em_aws (0.4.0.beta)
       aws-sdk-v1
-      em-hot_tub (~> 1.0.0)
+      em-hot_tub (~> 1.1.0)
       em-http-request
       em-synchrony
 
@@ -17,10 +17,9 @@ GEM
     aws-sdk-v1 (1.66.0)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
-    byebug (8.2.1)
     cookiejar (0.3.0)
     diff-lcs (1.2.5)
-    em-hot_tub (1.0.0)
+    em-hot_tub (1.1.0)
       em-synchrony
       hot_tub (~> 1.0.0)
     em-http-request (1.1.3)
@@ -63,11 +62,10 @@ PLATFORMS
 DEPENDENCIES
   autotest
   bundler (~> 1.7)
-  byebug
   em_aws!
   eventmachine_httpserver
   rspec
   rspec-autotest
 
 BUNDLED WITH
-   1.10.4
+   1.11.2
