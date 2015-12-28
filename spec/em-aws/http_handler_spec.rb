@@ -14,6 +14,7 @@
 require 'spec_helper'
 require 'eventmachine'
 require 'evma_httpserver'
+require 'aws/core/http/em_http_handler'
 module AWS::Core
   module Http
     class EMFooIO

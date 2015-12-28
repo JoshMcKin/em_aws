@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    em_aws (0.4.0.beta)
+    em_aws (1.0.0)
       aws-sdk-v1
       em-hot_tub (~> 1.1.0)
       em-http-request

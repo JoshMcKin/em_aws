@@ -1,4 +1,3 @@
-require 'em-http'
 require 'em-synchrony'
 require 'em-synchrony/em-http'
 require 'em-hot_tub'
