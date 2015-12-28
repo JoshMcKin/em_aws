@@ -4,11 +4,17 @@ EmAws Changelog
 HEAD
 =======
 
+- None yet!
+
+1.0.0
+=======
+
 - Update to aws-skd-v1
 - Update specs
 - Use em-hot_tub
 - Add integration tests
 - EM style name space: require "em-aws"
+- Support verify_response_body_content_length
 
 0.3.2
 =======
@@ -19,8 +25,8 @@ HEAD
 0.3.0
 =======
 
-- requires AWS-SDK 1.9.3 for thread saftey issues in 1.9.0-1.9.2
-- refactors client API to expose EM-Http-Request client options directly
+- requires AWS-SDK 1.9.3 for thread safety issues in 1.9.0-1.9.2
+- refactor client API to expose EM-Http-Request client options directly
 
 0.2.9
 =======
