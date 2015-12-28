@@ -24,7 +24,7 @@ describe Kernel, '#sleep' do
 
   it "should be a fiber safe sleep from with AWS module" do
     EM.synchrony do
-      EM::Synchrony.stub(:sleep).and_return("fiber safe")
+      allow(EM::Synchrony).to receive(:sleep).and_return("fiber safe")
       expect(Kernel.sleep(1)).to eql("fiber safe")
       EM.stop
     end
