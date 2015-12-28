@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'aws-sdk-v1'
-require 'aws/core/http/em_http_handler'
 
 describe AWS::DynamoDB do
   if ENV['AWS_ACCESS_KEY_ID'] && ENV['AWS_SECRET_ACCESS_KEY']
@@ -14,7 +12,7 @@ describe AWS::DynamoDB do
 
     it "should work" do
       begin
-        AWS.config( :http_handler => AWS::Http::EMHttpHandler.new(:pool_size => 20))
+        AWS.config( :http_handler => EM::AWS::HttpHandler.new(:pool_size => 20))
         dynamo_db = AWS::DynamoDB.new
         dynamo_db.tables['mytable'].delete if dynamo_db.tables['mytable'].exists?
 

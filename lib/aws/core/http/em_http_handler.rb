@@ -11,6 +11,6 @@ module AWS
   # previous default handler to remain accessible from its old namespace
   # @private
   module Http
-    class EMHttpHandler < Core::Http::EMHttpHandler; end
+    class EMHttpHandler < AWS::Core::Http::EMHttpHandler; end
   end
 end

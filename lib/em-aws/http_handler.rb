@@ -1,8 +1,4 @@
 # http://docs.amazonwebservices.com/AWSRubySDK/latest/
-require 'hot_tub'
-require 'em-synchrony'
-require 'em-synchrony/em-http'
-require 'em-synchrony/thread'
 module EventMachine
   module AWS
 
@@ -170,7 +166,7 @@ module EventMachine
             response.status = http_response.response_header.status.to_i
             raise Timeout::Error if response.status == 0
             response.headers = fetch_response_headers(http_response)
-            response.body = http_response.response
+            response.body = http_response.response unless block_given?
           end
 
           run_check = exp_length && request.http_method != "HEAD" && @verify_content_length

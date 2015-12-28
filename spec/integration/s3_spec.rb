@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'aws-sdk-v1'
-require 'aws/core/http/em_http_handler'
 
 describe AWS::S3 do
   if ENV['AWS_ACCESS_KEY_ID'] && ENV['AWS_SECRET_ACCESS_KEY']
@@ -14,7 +12,7 @@ describe AWS::S3 do
 
     it "should work" do
       begin
-        AWS.config( :http_handler => AWS::Http::EMHttpHandler.new )
+        AWS.config( :http_handler => EM::AWS::HttpHandler.new )
         s3 = AWS::S3.new
 
         # Create bucket
